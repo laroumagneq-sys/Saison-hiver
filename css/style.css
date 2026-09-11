@@ -547,6 +547,26 @@ blockquote.tagline {
   25% { opacity: 0; }
 }
 
+.dish-carousel .placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--accent);
+  background: linear-gradient(135deg, var(--bg-alt), var(--border));
+}
+
+.dish-carousel .placeholder span {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
 .dish-text .eyebrow {
   margin-bottom: 10px;
 }
