@@ -11,7 +11,7 @@ Aucune installation nécessaire. Ouvre `index.html` dans ton navigateur (double-
 - `index.html` — Accueil (présentation, contact rapide WhatsApp)
 - `le-duo.html` — Barthélémy (chef privé) et Quentin (majordome & sommelier)
 - `prestations.html` — Dîners, service en salle, vins & cocktails, moments signature, déroulement
-- `galerie.html` — Galerie photo (dressages du chef, service en cave, quelques placeholders restants)
+- `galerie.html` — Galerie photo (dressages du chef, service au bar, belles bouteilles)
 - `contact.html` — Formulaire de contact + WhatsApp + destinations
 - `css/style.css` — Les couleurs, polices et la mise en page (un seul fichier pour tout le site)
 - `img/` — Dossier où mettre les vraies photos
@@ -22,13 +22,13 @@ Tout le texte est écrit en clair dans les fichiers `.html`. Ouvre-les avec un �
 
 ## Ajouter d'autres photos
 
-Il reste quelques cadres avec icônes à la place de photos (champagne, bouteille, cave, dans `galerie.html`). Pour les remplacer :
+Toutes les photos actuelles sont réelles. Si tu veux en ajouter de nouvelles ou remplacer une des figures de `galerie.html` :
 
 1. Copie le fichier image dans le dossier `img/`
-2. Repère le bloc `<div class="placeholder">...</div>` à remplacer
-3. Remplace-le par une balise image, par exemple :
+2. Repère la balise `<img src="img/....jpg" ...>` à remplacer, dans le fichier `.html` concerné
+3. Change simplement le `src` (et l'`alt`), par exemple :
    ```html
-   <img src="img/nom-du-fichier.jpg" alt="Description de la photo">
+   <img src="img/nouvelle-photo.jpg" alt="Description de la photo">
    ```
 
 Envoie-moi les photos quand tu les as et je peux les intégrer directement.
