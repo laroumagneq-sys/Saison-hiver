@@ -517,6 +517,10 @@ blockquote.tagline {
   align-items: center;
 }
 
+.dish-row.reverse .dish-carousel {
+  order: 2;
+}
+
 .dish-carousel {
   position: relative;
   width: 100%;
@@ -587,6 +591,10 @@ blockquote.tagline {
 @media (max-width: 780px) {
   .dish-row {
     grid-template-columns: 1fr;
+  }
+
+  .dish-row .dish-carousel {
+    order: initial;
   }
 }
 
