@@ -1,6 +1,6 @@
-# LCP Cousins
+# LCP
 
-Site vitrine pour **LCP Cousins** (chef privé &amp; sommelier/majordome pour chalets de luxe), simple et sans outil compliqué : juste des pages HTML/CSS que tu peux ouvrir et modifier directement.
+Site vitrine pour **LCP** (chef privé &amp; sommelier/majordome pour chalets de luxe), simple et sans outil compliqué : juste des pages HTML/CSS que tu peux ouvrir et modifier directement.
 
 ## Voir le site
 

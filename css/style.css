@@ -151,23 +151,44 @@ nav.main-nav a.active {
   justify-content: center;
   text-align: center;
   padding: 48px 28px;
+  border-left: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  background: radial-gradient(ellipse at 50% 45%, var(--bg) 0%, var(--bg-alt) 150%);
 }
 
-.hero-center .eyebrow {
-  margin-bottom: 8px;
+.hero-ornament {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.hero-ornament .line {
+  width: 32px;
+  height: 1px;
+  background: var(--accent);
+}
+
+.hero-ornament .eyebrow {
+  margin-bottom: 0;
 }
 
 .hero-center h1 {
-  font-size: 2.7rem;
-  margin: 0 0 14px;
+  font-size: 2.9rem;
+  margin: 0 0 16px;
   color: var(--text);
+}
+
+.hero-center hr.rule {
+  margin: 0 auto 20px;
 }
 
 .hero-center .whatsapp {
   color: var(--accent);
   font-size: 0.85rem;
   letter-spacing: 0.05em;
-  margin-bottom: 18px;
+  margin-bottom: 22px;
 }
 
 .hero-center .locations {
@@ -175,6 +196,8 @@ nav.main-nav a.active {
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--text-muted);
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
 }
 
 .hero-center .locations .minor {
