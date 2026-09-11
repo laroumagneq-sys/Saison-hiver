@@ -369,6 +369,26 @@ blockquote.tagline {
   object-fit: cover;
 }
 
+.duo-photo .placeholder {
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--accent);
+  background: linear-gradient(135deg, var(--bg-alt), var(--border));
+}
+
+.duo-photo .placeholder span {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
 .duo-bio h3 {
   font-size: 1.6rem;
   margin: 0 0 4px;
