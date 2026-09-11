@@ -484,6 +484,37 @@ blockquote.tagline {
   color: var(--text-muted);
 }
 
+/* Filmstrip (horizontal scrolling gallery) */
+
+.filmstrip {
+  display: flex;
+  gap: 20px;
+  overflow-x: auto;
+  padding-bottom: 12px;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+}
+
+.filmstrip figure {
+  flex: 0 0 220px;
+  margin: 0;
+  scroll-snap-align: start;
+}
+
+.filmstrip figure img {
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+}
+
+.filmstrip figcaption {
+  padding-top: 10px;
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
 /* Contact form */
 
 .form-field {

@@ -10,6 +10,7 @@ Aucune installation nécessaire. Ouvre `index.html` dans ton navigateur (double-
 
 - `index.html` — Accueil (présentation, contact rapide WhatsApp)
 - `le-duo.html` — Barthélémy (chef privé) et Quentin (majordome & sommelier)
+- `la-cave.html` — Vieux millésimes, accords mets & vins, vignerons indépendants, défilé photo
 - `prestations.html` — Dîners, service en salle, vins & cocktails, moments signature, déroulement
 - `galerie.html` — Galerie photo (dressages du chef, service au bar, belles bouteilles)
 - `contact.html` — Formulaire de contact + WhatsApp + destinations
@@ -45,4 +46,4 @@ Le site n'est pas encore publié. Quand tu voudras le rendre accessible en ligne
 2. Dans les réglages du dépôt (Settings → Pages), on active GitHub Pages sur la branche principale
 3. Le site devient accessible via une adresse en `https://<ton-compte>.github.io/Saison-hiver`
 
-Idéalement, il faudra ensuite y associer un nom de domaine personnalisé (ex. `lcp-cousins.com`). Demande-moi quand tu veux avancer là-dessus.
+Idéalement, il faudra ensuite y associer un nom de domaine personnalisé (ex. `lcp-chalet.com`). Demande-moi quand tu veux avancer là-dessus.
