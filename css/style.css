@@ -144,6 +144,13 @@ nav.main-nav a.active {
   justify-content: center;
   color: var(--accent);
   min-height: 220px;
+  overflow: hidden;
+}
+
+.hero-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .hero-center {
@@ -307,6 +314,19 @@ blockquote.tagline {
   display: block;
 }
 
+.card-photo {
+  margin: -26px -26px 18px;
+  border-radius: var(--radius) var(--radius) 0 0;
+  overflow: hidden;
+}
+
+.card-photo img {
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+  display: block;
+}
+
 .card ul {
   margin: 0;
   padding-left: 18px;
@@ -394,6 +414,12 @@ blockquote.tagline {
   justify-content: center;
   color: var(--accent-dark);
   background: linear-gradient(135deg, #ede2c8, #ddcfa9);
+}
+
+.gallery figure img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
 }
 
 .gallery figcaption {
