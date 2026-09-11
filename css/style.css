@@ -551,6 +551,20 @@ blockquote.tagline {
   25% { opacity: 0; }
 }
 
+.dish-carousel.two-photos img {
+  animation: dishFadeTwo 6s infinite;
+}
+
+.dish-carousel.two-photos img:nth-child(1) { animation-delay: 0s; }
+.dish-carousel.two-photos img:nth-child(2) { animation-delay: 3s; }
+
+@keyframes dishFadeTwo {
+  0%, 100% { opacity: 0; }
+  4% { opacity: 1; }
+  46% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
 .dish-carousel .placeholder {
   position: absolute;
   inset: 0;
