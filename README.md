@@ -10,6 +10,7 @@ Aucune installation nécessaire. Ouvre `index.html` dans ton navigateur (double-
 
 - `index.html` — Accueil (présentation, contact rapide WhatsApp)
 - `le-duo.html` — Barthélémy (chef privé) et Quentin (majordome & sommelier)
+- `animations-de-salle.html` — Découpe, guéridon, bar, présentation de champagne & spiritueux
 - `la-cave.html` — Vieux millésimes, accords mets & vins, vignerons indépendants, défilé photo
 - `prestations.html` — Dîners, service en salle, vins & cocktails, moments signature, déroulement
 - `galerie.html` — Galerie photo (dressages du chef, service au bar, belles bouteilles)
