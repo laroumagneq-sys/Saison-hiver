@@ -374,7 +374,7 @@ async function connectCloud() {
   if (!window.claude || typeof window.claude.use !== 'function') return setSync('local');
   let cloud = null;
   try { cloud = await window.claude.use('db'); } catch (e) { cloud = null; }
-  if (!cloud) return setSync('local');
+  if (!cloud) return setSync('offline');
   store.cloud = cloud;
   setSync('wait');
   cloud.collection('clients').limit(1000).onSnapshot(snap => {
@@ -390,8 +390,11 @@ async function connectCloud() {
 function setSync(state) {
   const el = $('#sync'); if (!el) return;
   el.dataset.state = state;
+  store.sync = state;
+  if (state === 'offline') renderList();
   el.textContent = {
     local: '💾 Enregistré sur cet appareil uniquement',
+    offline: '⚠️ Base en ligne inaccessible dans cet affichage',
     wait: '☁️ Connexion…',
     cloud: '☁️ Enregistré en ligne — mêmes données sur téléphone et ordinateur',
     error: '⚠️ Connexion perdue — recharge la page',
@@ -504,6 +507,16 @@ function renderChips() {
 
 function renderList() {
   const card = $('#listCard');
+  if (!db.clients.length && (store.sync === 'wait' || store.sync === undefined && window.claude)) {
+    card.innerHTML = `<div class="empty"><h2>Chargement de tes clients…</h2></div>`;
+    return;
+  }
+  if (!db.clients.length && store.sync === 'offline') {
+    card.innerHTML = `<div class="empty"><h2>Tes clients sont enregistrés en ligne</h2>
+      <p>Cet affichage n'a pas accès à ta base. Ouvre ce lien dans l'<b>app Claude</b>, ou sur <b>claude.ai</b> en étant connecté à ton compte.</p>
+      <p class="hint">N'importe pas ton tableau ici : il ne serait enregistré que sur cet appareil.</p></div>`;
+    return;
+  }
   if (!db.clients.length) {
     card.innerHTML = `<div class="empty"><h2>Aucun client pour l'instant</h2>
       <p>Importe ton tableau (Excel ou CSV) avec tes clients à démarcher, ou ajoute-les un par un.</p>
