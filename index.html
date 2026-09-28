@@ -339,7 +339,16 @@ function saveLocal() {
 }
 function cloudWrite(id, fn) {
   // une écriture à la fois par document
-  const run = () => fn(store.cloud.doc('clients/' + id)).catch(e => {
+  const attempt = async () => {
+    for (let i = 0; ; i++) {
+      try { return await fn(store.cloud.doc('clients/' + id)); }
+      catch (e) {
+        if (i >= 4 || !e || !['unavailable', 'resource_exhausted'].includes(e.code)) throw e;
+        await new Promise(r => setTimeout(r, 800 * 2 ** i + Math.random() * 400));
+      }
+    }
+  };
+  const run = () => attempt().catch(e => {
     console.error(e);
     toast(e && e.code === 'quota_exceeded' ? '⚠️ Stockage plein : supprime des clients inutiles.' : '⚠️ Enregistrement en ligne impossible, réessaie.');
   });
@@ -437,6 +446,9 @@ function ask(message, okLabel = 'Confirmer') {
 }
 function openOv(id) { $(id).classList.add('open'); }
 function closeOv(el) { el.classList.remove('open'); if (el.id === 'ovAsk' && ask.cancel) { const c = ask.cancel; ask.cancel = null; c(); } }
+// Une case peut contenir plusieurs numéros / adresses : le lien prend le premier.
+const telHref = t => ((String(t).match(/\+?\d[\d .-]{5,}\d/) || [''])[0]).replace(/[^\d+]/g, '');
+const mailHref = m => (String(m).match(/[^\s·,;]+@[^\s·,;]+/) || [''])[0];
 const displayName = c => c.entreprise || c.contact || '(sans nom)';
 
 /* ---------- Données dérivées ---------- */
@@ -521,7 +533,7 @@ function renderList() {
       return `<tr data-id="${c.id}" class="${cls}">
         <td class="c-name"><div class="name">${esc(displayName(c))}</div>
           <div class="sub">${[c.entreprise && c.contact ? esc(c.contact) : '', c.ville ? esc(c.ville) : ''].filter(Boolean).join(' · ')}</div>
-          <div class="sub">${c.telephone ? `<a href="tel:${esc(c.telephone.replace(/[^\d+]/g, ''))}" data-stop>${esc(c.telephone)}</a>` : ''}${c.telephone && c.email ? ' · ' : ''}${c.email ? `<a href="mailto:${esc(c.email)}" data-stop>${esc(c.email)}</a>` : ''}</div></td>
+          <div class="sub">${c.telephone ? `<a href="tel:${esc(telHref(c.telephone))}" data-stop>${esc(c.telephone)}</a>` : ''}${c.telephone && c.email ? ' · ' : ''}${c.email ? `<a href="mailto:${esc(mailHref(c.email))}" data-stop>${esc(c.email)}</a>` : ''}</div></td>
         <td class="c-status">${badge(c.statut)}</td>
         <td class="c-last">${last ? `<div>${esc(actionLabel(last))}</div><div class="sub">${esc(fmtDT(last.date))}${last.note ? ' — ' + esc(last.note.length > 60 ? last.note.slice(0, 60) + '…' : last.note) : ''}</div>` : '<span class="sub">—</span>'}</td>
         <td class="c-counts">${nA || nM ? `${nA ? nA + ' 📞' : ''} ${nM ? nM + ' ✉️' : ''}` : ''}</td>
