@@ -455,7 +455,9 @@ function closeOv(el) { el.classList.remove('open'); if (el.id === 'ovAsk' && ask
 // Une case peut contenir plusieurs numéros / adresses : le lien prend le premier.
 const telHref = t => ((String(t).match(/\+?\d[\d .-]{5,}\d/) || [''])[0]).replace(/[^\d+]/g, '');
 const mailList = m => String(m || '').match(/[^\s·,;]+@[^\s·,;]+/g) || [];
-const gmailHref = m => 'https://mail.google.com/mail/?view=cm&fs=1&to=' + encodeURIComponent(m);
+const MAIL_SUBJECT = 'Private Chef & Butler Courchevel et Méribel 2026 / 2027';
+const gmailHref = m => 'https://mail.google.com/mail/?view=cm&fs=1&to=' + encodeURIComponent(m) + '&su=' + encodeURIComponent(MAIL_SUBJECT);
+const mailtoHref = m => 'mailto:' + m + '?subject=' + encodeURIComponent(MAIL_SUBJECT);
 const mailHref = m => (String(m).match(/[^\s·,;]+@[^\s·,;]+/) || [''])[0];
 const displayName = c => c.entreprise || c.contact || '(sans nom)';
 
@@ -598,7 +600,7 @@ function renderClient() {
       ${field('contact', 'Contact (personne)')}
       ${field('telephone', 'Téléphone', 'tel')}
       ${field('email', 'Email', 'email')}
-      ${mailList(c.email).length ? `<div class="full mailrow">${mailList(c.email).map(m => `<div class="mailline"><a class="btn primary small" href="${esc(gmailHref(m))}" target="_blank" rel="noopener">✉️ Écrire dans Gmail à ${esc(m)}</a><a class="btn small" href="mailto:${esc(m)}" target="_blank" rel="noopener">Autre appli mail</a><button class="btn small" type="button" data-copy="${esc(m)}">Copier</button></div>`).join('')}</div>` : ''}
+      ${mailList(c.email).length ? `<div class="full mailrow">${mailList(c.email).map(m => `<div class="mailline"><a class="btn primary small" href="${esc(gmailHref(m))}" target="_blank" rel="noopener">✉️ Écrire dans Gmail à ${esc(m)}</a><a class="btn small" href="${esc(mailtoHref(m))}" target="_blank" rel="noopener">Autre appli mail</a><button class="btn small" type="button" data-copy="${esc(m)}">Copier</button></div>`).join('')}</div>` : ''}
       ${field('ville', 'Ville / station')}
       ${field('secteur', 'Secteur / type')}
       <label class="f full">Adresse<input data-field="adresse" value="${esc(c.adresse || '')}"></label>
