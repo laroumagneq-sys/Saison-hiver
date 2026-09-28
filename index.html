@@ -1,0 +1,757 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cardex Prospection</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root {
+  --bg: #f5f6f8; --surface: #ffffff; --surface-2: #f0f2f5; --border: #dfe3e8;
+  --text: #1c2330; --muted: #5f6b7a; --accent: #2563eb; --accent-text: #ffffff;
+  --danger: #c62828; --shadow: 0 1px 3px rgba(20,30,50,.08), 0 4px 16px rgba(20,30,50,.06);
+  --s-gris: #6b7280; --s-ambre: #b7791f; --s-orange: #dd6b20; --s-bleu: #2563eb;
+  --s-vert: #16a34a; --s-violet: #7c3aed; --s-rouge: #dc2626; --s-vert-f: #15803d;
+  --overdue: #fdecec; --today: #fff6e0;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12151b; --surface: #1b2029; --surface-2: #232a35; --border: #313a47;
+    --text: #e6e9ef; --muted: #9aa5b4; --accent: #5b8def; --accent-text: #ffffff;
+    --danger: #ef6b6b; --shadow: 0 1px 3px rgba(0,0,0,.4);
+    --s-gris: #9ca3af; --s-ambre: #e0a93b; --s-orange: #f08a4b; --s-bleu: #6b9bf2;
+    --s-vert: #3ccf74; --s-violet: #a78bfa; --s-rouge: #f07171; --s-vert-f: #34d399;
+    --overdue: #3a2224; --today: #3a3220;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12151b; --surface: #1b2029; --surface-2: #232a35; --border: #313a47;
+  --text: #e6e9ef; --muted: #9aa5b4; --accent: #5b8def; --accent-text: #ffffff;
+  --danger: #ef6b6b; --shadow: 0 1px 3px rgba(0,0,0,.4);
+  --s-gris: #9ca3af; --s-ambre: #e0a93b; --s-orange: #f08a4b; --s-bleu: #6b9bf2;
+  --s-vert: #3ccf74; --s-violet: #a78bfa; --s-rouge: #f07171; --s-vert-f: #34d399;
+  --overdue: #3a2224; --today: #3a3220;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--text);
+  font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+button, input, select, textarea { font: inherit; color: inherit; }
+.wrap { max-width: 1200px; margin: 0 auto; padding: 16px; }
+header.top { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+header.top h1 { font-size: 22px; margin: 0; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.btn {
+  border: 1px solid var(--border); background: var(--surface); padding: 8px 12px;
+  border-radius: 8px; cursor: pointer; white-space: nowrap;
+}
+.btn:hover { background: var(--surface-2); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn.danger { color: var(--danger); }
+.btn.small { padding: 4px 8px; font-size: 13px; }
+.btn.icon { padding: 5px 8px; }
+
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 14px; }
+.stat { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px; box-shadow: var(--shadow); }
+.stat .v { font-size: 24px; font-weight: 700; }
+.stat .l { color: var(--muted); font-size: 13px; }
+.bar { height: 6px; border-radius: 3px; background: var(--surface-2); margin-top: 6px; overflow: hidden; }
+.bar > i { display: block; height: 100%; background: var(--accent); }
+
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
+.toolbar input[type=search] { flex: 1 1 220px; min-width: 0; padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); }
+.toolbar select { padding: 8px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.chip {
+  border: 1px solid var(--border); background: var(--surface); border-radius: 999px;
+  padding: 4px 10px; cursor: pointer; font-size: 13px; display: inline-flex; gap: 6px; align-items: center;
+}
+.chip .n { color: var(--muted); }
+.chip.on { background: var(--text); color: var(--bg); border-color: var(--text); }
+.chip.on .n { color: inherit; opacity: .75; }
+.dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex: none; }
+
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow); overflow: hidden; }
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+th { font-size: 12px; text-transform: uppercase; letter-spacing: .03em; color: var(--muted); background: var(--surface-2); }
+tbody tr { cursor: pointer; }
+tbody tr:hover { background: var(--surface-2); }
+tr.overdue td.relance { background: var(--overdue); }
+tr.today td.relance { background: var(--today); }
+.name { font-weight: 600; }
+.sub { color: var(--muted); font-size: 13px; }
+.sub a { color: inherit; }
+.badge {
+  display: inline-flex; align-items: center; gap: 6px; padding: 2px 9px; border-radius: 999px;
+  font-size: 12.5px; font-weight: 600; border: 1px solid currentColor; white-space: nowrap;
+}
+.counts { white-space: nowrap; font-size: 13px; }
+.rowbtns { display: flex; gap: 4px; justify-content: flex-end; }
+.empty { padding: 40px 20px; text-align: center; color: var(--muted); }
+.empty h2 { color: var(--text); margin-top: 0; }
+
+/* Modales */
+.overlay { position: fixed; inset: 0; background: rgba(10,15,25,.5); display: none; align-items: flex-start; justify-content: center; padding: 24px 16px; overflow-y: auto; z-index: 10; }
+.overlay.open { display: flex; }
+.modal { background: var(--surface); border-radius: 12px; width: 100%; max-width: 680px; box-shadow: 0 10px 40px rgba(0,0,0,.3); }
+.modal header { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid var(--border); gap: 10px; }
+.modal header h2 { margin: 0; font-size: 18px; }
+.modal .body { padding: 16px; }
+.modal footer { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--border); flex-wrap: wrap; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+label.f { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--muted); }
+label.f input, label.f select, label.f textarea {
+  padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--text); font-size: 15px;
+}
+label.f textarea { min-height: 70px; resize: vertical; }
+.full { grid-column: 1 / -1; }
+.section-t { font-weight: 700; margin: 18px 0 8px; display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+.tabs .chip { font-size: 14px; padding: 6px 12px; }
+.results { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.results .chip { font-size: 14px; padding: 7px 12px; }
+.history { list-style: none; padding: 0; margin: 0; }
+.history li { display: flex; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--border); }
+.history li:last-child { border-bottom: 0; }
+.history .ico { font-size: 18px; line-height: 1.2; }
+.history .main { flex: 1; min-width: 0; }
+.history .note { white-space: pre-wrap; margin-top: 2px; }
+.extra { display: grid; grid-template-columns: max-content 1fr; gap: 4px 12px; font-size: 14px; }
+.extra dt { color: var(--muted); }
+.extra dd { margin: 0; word-break: break-word; }
+.map-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; align-items: center; padding: 5px 0; border-bottom: 1px solid var(--border); }
+.map-row .ex { color: var(--muted); font-size: 12.5px; }
+.toast { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); background: var(--text); color: var(--bg); padding: 10px 16px; border-radius: 8px; opacity: 0; transition: opacity .2s; pointer-events: none; z-index: 20; max-width: calc(100% - 32px); }
+.toast.show { opacity: 1; }
+.hint { color: var(--muted); font-size: 13px; }
+
+@media (max-width: 760px) {
+  thead { display: none; }
+  table, tbody, tr, td { display: block; width: 100%; }
+  tbody tr { padding: 10px 12px; border-bottom: 1px solid var(--border); display: grid; grid-template-columns: 1fr auto; gap: 4px 8px; }
+  td { border: 0; padding: 0; }
+  td.c-name { grid-column: 1; }
+  td.c-status { grid-column: 2; grid-row: 1; text-align: right; }
+  td.c-last, td.c-counts, td.relance { grid-column: 1 / -1; font-size: 13px; }
+  td.c-counts:empty, td.relance:empty { display: none; }
+  td.c-btns { grid-column: 1 / -1; }
+  .rowbtns { justify-content: flex-start; }
+  tr.overdue td.relance, tr.today td.relance { border-radius: 6px; padding: 2px 6px; }
+  .grid2 { grid-template-columns: 1fr; }
+  .map-row { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1>📇 Cardex Prospection</h1>
+    <div class="actions">
+      <button class="btn primary" id="btnImport">📥 Importer Excel / CSV</button>
+      <button class="btn" id="btnAdd">➕ Nouveau client</button>
+      <button class="btn" id="btnExport">📤 Exporter Excel</button>
+      <button class="btn" id="btnMore">⋯ Sauvegarde</button>
+    </div>
+  </header>
+
+  <section class="stats" id="stats"></section>
+
+  <div class="toolbar">
+    <input type="search" id="search" placeholder="Rechercher (nom, ville, téléphone, email, notes…)">
+    <select id="sort" aria-label="Trier">
+      <option value="relance">Trier : prochaine relance</option>
+      <option value="nom">Trier : nom (A→Z)</option>
+      <option value="statut">Trier : statut</option>
+      <option value="dernier">Trier : dernier contact</option>
+    </select>
+  </div>
+  <div class="chips" id="chips"></div>
+
+  <div class="card" id="listCard"></div>
+</div>
+
+<input type="file" id="fileImport" accept=".xlsx,.xls,.csv,.ods,.txt" hidden>
+<input type="file" id="fileRestore" accept=".json" hidden>
+
+<!-- Fiche client -->
+<div class="overlay" id="ovClient"><div class="modal" role="dialog" aria-modal="true">
+  <header><h2 id="clientTitle">Fiche client</h2><button class="btn icon" data-close>✕</button></header>
+  <div class="body" id="clientBody"></div>
+  <footer>
+    <button class="btn danger" id="btnDelete" style="margin-right:auto">🗑 Supprimer</button>
+    <button class="btn" data-close>Fermer</button>
+  </footer>
+</div></div>
+
+<!-- Saisie appel / mail -->
+<div class="overlay" id="ovAction"><div class="modal" role="dialog" aria-modal="true">
+  <header><h2 id="actionTitle">Nouvelle action</h2><button class="btn icon" data-close>✕</button></header>
+  <div class="body">
+    <div class="tabs" id="actionTypes"></div>
+    <div class="hint" id="resultHint" style="margin-bottom:6px">Résultat :</div>
+    <div class="results" id="actionResults"></div>
+    <div class="grid2">
+      <label class="f">Date et heure<input type="datetime-local" id="aDate"></label>
+      <label class="f">Nouveau statut<select id="aStatut"></select></label>
+      <label class="f">Prochaine relance<input type="date" id="aRelance"></label>
+      <div class="f" style="justify-content:flex-end;display:flex;gap:6px;flex-wrap:wrap">
+        <button class="btn small" type="button" data-plus="1">+1 j</button>
+        <button class="btn small" type="button" data-plus="3">+3 j</button>
+        <button class="btn small" type="button" data-plus="7">+1 sem</button>
+        <button class="btn small" type="button" data-plus="0">Aucune</button>
+      </div>
+      <label class="f full">Commentaire<textarea id="aNote" placeholder="Ce qui s'est dit, interlocuteur, besoin, objection…"></textarea></label>
+    </div>
+  </div>
+  <footer>
+    <button class="btn" data-close>Annuler</button>
+    <button class="btn primary" id="btnSaveAction">Enregistrer</button>
+  </footer>
+</div></div>
+
+<!-- Import : correspondance des colonnes -->
+<div class="overlay" id="ovImport"><div class="modal" role="dialog" aria-modal="true">
+  <header><h2>Importer le tableau</h2><button class="btn icon" data-close>✕</button></header>
+  <div class="body">
+    <p id="importInfo" style="margin-top:0"></p>
+    <p class="hint">Vérifie à quoi correspond chaque colonne de ton fichier. Les colonnes « Autre info » sont conservées et visibles dans la fiche client.</p>
+    <div id="importMap"></div>
+    <div id="importMode" style="margin-top:14px"></div>
+  </div>
+  <footer>
+    <button class="btn" data-close>Annuler</button>
+    <button class="btn primary" id="btnDoImport">Importer</button>
+  </footer>
+</div></div>
+
+<!-- Sauvegarde -->
+<div class="overlay" id="ovMore"><div class="modal" role="dialog" aria-modal="true">
+  <header><h2>Sauvegarde des données</h2><button class="btn icon" data-close>✕</button></header>
+  <div class="body">
+    <p style="margin-top:0">Les données sont enregistrées automatiquement <b>dans ce navigateur, sur cet appareil</b>. Pense à télécharger une sauvegarde régulièrement (ou pour passer sur un autre ordinateur).</p>
+    <div class="actions">
+      <button class="btn primary" id="btnBackup">💾 Télécharger une sauvegarde (.json)</button>
+      <button class="btn" id="btnRestore">♻️ Restaurer une sauvegarde</button>
+      <button class="btn danger" id="btnReset">🗑 Tout effacer</button>
+    </div>
+    <p class="hint" id="lastSave"></p>
+  </div>
+  <footer><button class="btn" data-close>Fermer</button></footer>
+</div></div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+
+/* ---------- Référentiels ---------- */
+const STATUTS = [
+  { id: 'a_contacter',   label: 'À contacter',            color: 'var(--s-gris)' },
+  { id: 'en_cours',      label: 'Contacté – sans réponse', color: 'var(--s-ambre)' },
+  { id: 'a_relancer',    label: 'À rappeler / relancer',  color: 'var(--s-orange)' },
+  { id: 'repondu',       label: 'A répondu – à suivre',    color: 'var(--s-bleu)' },
+  { id: 'interesse',     label: 'Intéressé',              color: 'var(--s-vert)' },
+  { id: 'rdv',           label: 'RDV fixé',               color: 'var(--s-violet)' },
+  { id: 'signe',         label: 'Client signé',           color: 'var(--s-vert-f)' },
+  { id: 'pas_interesse', label: 'Pas intéressé',          color: 'var(--s-rouge)' },
+];
+const STATUT = Object.fromEntries(STATUTS.map(s => [s.id, s]));
+// Statuts "faibles" : un résultat sans réponse ne les dégrade pas s'ils sont déjà plus avancés.
+const FAIBLES = ['a_contacter', 'en_cours', 'a_relancer'];
+
+const TYPES = {
+  appel: { label: 'Appel', ico: '📞' },
+  mail:  { label: 'Mail',  ico: '✉️' },
+  rdv:   { label: 'RDV / visite', ico: '🤝' },
+  note:  { label: 'Note',  ico: '📝' },
+};
+// statut: statut proposé (null = inchangé) ; soft: ne s'applique que si statut actuel "faible" ; j: relance proposée (jours)
+const RESULTATS = {
+  appel: [
+    { id: 'pas_reponse',   label: 'Pas de réponse',              statut: 'en_cours', soft: true, j: 2 },
+    { id: 'messagerie',    label: 'Messagerie – message laissé', statut: 'en_cours', soft: true, j: 3 },
+    { id: 'rappeler',      label: 'Répondu – rappeler plus tard', statut: 'a_relancer', j: 2 },
+    { id: 'infos',         label: 'Répondu – veut des infos par mail', statut: 'repondu', j: 3 },
+    { id: 'interesse',     label: 'Répondu – intéressé',         statut: 'interesse', j: 7 },
+    { id: 'rdv',           label: 'RDV fixé',                    statut: 'rdv' },
+    { id: 'pas_interesse', label: 'Répondu – pas intéressé',     statut: 'pas_interesse' },
+    { id: 'mauvais_num',   label: 'Mauvais numéro',              statut: null },
+  ],
+  mail: [
+    { id: 'envoye',        label: 'Mail envoyé',                 statut: 'en_cours', soft: true, j: 5 },
+    { id: 'relance',       label: 'Relance envoyée',             statut: 'en_cours', soft: true, j: 5 },
+    { id: 'rep_interesse', label: 'Réponse – intéressé',         statut: 'interesse', j: 3 },
+    { id: 'rep_infos',     label: 'Réponse – demande d\'infos',  statut: 'repondu', j: 3 },
+    { id: 'rep_pas',       label: 'Réponse – pas intéressé',     statut: 'pas_interesse' },
+    { id: 'invalide',      label: 'Adresse invalide / erreur',   statut: null },
+  ],
+  rdv: [
+    { id: 'fait',          label: 'RDV effectué',                statut: null, j: 7 },
+    { id: 'signe',         label: 'Signé 🎉',                    statut: 'signe' },
+    { id: 'reporte',       label: 'Reporté',                     statut: 'a_relancer', j: 7 },
+    { id: 'annule',        label: 'Annulé',                      statut: 'a_relancer', j: 3 },
+  ],
+  note: [],
+};
+const RESULTAT = {};
+for (const t in RESULTATS) for (const r of RESULTATS[t]) RESULTAT[t + ':' + r.id] = r;
+
+const CHAMPS = [
+  { id: 'entreprise', label: 'Entreprise / Nom client', keys: ['entreprise', 'societe', 'raison sociale', 'client', 'nom client', 'nom entreprise', 'structure', 'etablissement', 'company', 'organisation', 'enseigne', 'hotel', 'magasin', 'boutique', 'restaurant'] },
+  { id: 'contact',    label: 'Contact (personne)',      keys: ['contact', 'interlocuteur', 'nom contact', 'responsable', 'gerant', 'dirigeant', 'prenom nom', 'nom prenom', 'personne'] },
+  { id: 'prenom',     label: 'Prénom du contact',       keys: ['prenom'] },
+  { id: 'email',      label: 'Email',                   keys: ['email', 'e mail', 'mail', 'courriel', 'adresse mail', 'adresse email'] },
+  { id: 'telephone',  label: 'Téléphone',               keys: ['tel', 'telephone', 'portable', 'mobile', 'phone', 'numero', 'fixe', 'gsm', 'n tel'] },
+  { id: 'ville',      label: 'Ville / station',         keys: ['ville', 'commune', 'localite', 'city', 'station', 'lieu'] },
+  { id: 'adresse',    label: 'Adresse',                 keys: ['adresse', 'rue', 'code postal', 'cp'] },
+  { id: 'secteur',    label: 'Secteur / type',          keys: ['secteur', 'activite', 'categorie', 'type', 'domaine'] },
+  { id: 'notes',      label: 'Notes',                   keys: ['note', 'notes', 'commentaire', 'commentaires', 'remarque', 'remarques', 'observations', 'infos'] },
+  { id: 'statut',     label: 'Statut',                  keys: ['statut', 'etat', 'status', 'suivi'] },
+  { id: 'nom',        label: 'Nom (auto)',              keys: ['nom', 'name'], hidden: true },
+];
+
+/* ---------- Stockage ---------- */
+const KEY = 'cardex-prospection-v1';
+let db = { clients: [], savedAt: null };
+function load() {
+  try { const raw = localStorage.getItem(KEY); if (raw) db = JSON.parse(raw); } catch (e) { console.warn(e); }
+  if (!Array.isArray(db.clients)) db.clients = [];
+}
+function save() {
+  db.savedAt = new Date().toISOString();
+  try { localStorage.setItem(KEY, JSON.stringify(db)); }
+  catch (e) { toast('⚠️ Impossible d\'enregistrer dans ce navigateur — télécharge une sauvegarde.'); }
+}
+
+/* ---------- Utilitaires ---------- */
+const $ = s => document.querySelector(s);
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const norm = s => ' ' + String(s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim() + ' ';
+const pad = n => String(n).padStart(2, '0');
+const dayStr = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const today = () => dayStr(new Date());
+const nowLocal = () => { const d = new Date(); return `${dayStr(d)}T${pad(d.getHours())}:${pad(d.getMinutes())}`; };
+const plusDays = n => { const d = new Date(); d.setDate(d.getDate() + n); return dayStr(d); };
+const MOIS = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
+function fmtDay(s) {
+  if (!s) return '';
+  const [y, m, d] = s.slice(0, 10).split('-').map(Number);
+  if (!y) return s;
+  const t = today(), dd = s.slice(0, 10);
+  if (dd === t) return 'aujourd\'hui';
+  if (dd === plusDays(1)) return 'demain';
+  if (dd === plusDays(-1)) return 'hier';
+  return `${d} ${MOIS[m - 1]}${y !== new Date().getFullYear() ? ' ' + y : ''}`;
+}
+const fmtDT = s => s ? fmtDay(s) + (s.length > 10 ? ' ' + s.slice(11, 16) : '') : '';
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('show'), 2600); }
+function badge(id) { const s = STATUT[id] || STATUT.a_contacter; return `<span class="badge" style="color:${s.color}"><span class="dot" style="background:${s.color}"></span>${esc(s.label)}</span>`; }
+function download(name, content, type) {
+  const blob = content instanceof Blob ? content : new Blob([content], { type });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+function openOv(id) { $(id).classList.add('open'); }
+function closeOv(el) { el.classList.remove('open'); }
+const displayName = c => c.entreprise || c.contact || '(sans nom)';
+
+/* ---------- Données dérivées ---------- */
+function lastAction(c) {
+  let last = null;
+  for (const a of c.interactions || []) if (!last || a.date > last.date) last = a;
+  return last;
+}
+function countType(c, t) { return (c.interactions || []).filter(a => a.type === t).length; }
+function actionLabel(a) {
+  if (!a) return '';
+  const r = RESULTAT[a.type + ':' + a.resultat];
+  return `${TYPES[a.type]?.ico || ''} ${r ? r.label : TYPES[a.type]?.label || ''}`;
+}
+
+/* ---------- Rendu principal ---------- */
+let filtre = 'tous';
+function render() { renderStats(); renderChips(); renderList(); }
+
+function renderStats() {
+  const cs = db.clients, n = cs.length;
+  const contactes = cs.filter(c => (c.interactions || []).some(a => a.type !== 'note')).length;
+  const reponses = cs.filter(c => ['repondu', 'interesse', 'rdv', 'signe', 'pas_interesse', 'a_relancer'].includes(c.statut) && (c.interactions || []).length).length;
+  const chauds = cs.filter(c => ['interesse', 'rdv', 'signe'].includes(c.statut)).length;
+  const t = today();
+  const aRelancer = cs.filter(c => c.relance && c.relance <= t).length;
+  const appels = cs.reduce((s, c) => s + countType(c, 'appel'), 0);
+  const mails = cs.reduce((s, c) => s + countType(c, 'mail'), 0);
+  const pct = n ? Math.round(contactes / n * 100) : 0;
+  $('#stats').innerHTML = `
+    <div class="stat"><div class="v">${contactes} / ${n}</div><div class="l">clients contactés (${pct} %)</div><div class="bar"><i style="width:${pct}%"></i></div></div>
+    <div class="stat"><div class="v">${reponses}</div><div class="l">ont répondu${contactes ? ` (${Math.round(reponses / contactes * 100)} %)` : ''}</div></div>
+    <div class="stat"><div class="v" style="color:var(--s-vert)">${chauds}</div><div class="l">intéressés / RDV / signés</div></div>
+    <div class="stat"><div class="v" style="color:${aRelancer ? 'var(--s-orange)' : 'inherit'}">${aRelancer}</div><div class="l">relances à faire aujourd'hui</div></div>
+    <div class="stat"><div class="v">${appels} <span style="font-size:15px">📞</span> · ${mails} <span style="font-size:15px">✉️</span></div><div class="l">appels · mails effectués</div></div>`;
+}
+
+function filtres() {
+  const t = today();
+  return [
+    { id: 'tous', label: 'Tous', test: () => true },
+    { id: 'relances', label: '⏰ Relances du jour', test: c => c.relance && c.relance <= t },
+    { id: 'jamais', label: 'Jamais contactés', test: c => !(c.interactions || []).length },
+    ...STATUTS.map(s => ({ id: s.id, label: s.label, color: s.color, test: c => c.statut === s.id })),
+  ];
+}
+function renderChips() {
+  $('#chips').innerHTML = filtres().map(f => {
+    const n = db.clients.filter(f.test).length;
+    return `<button class="chip ${filtre === f.id ? 'on' : ''}" data-filter="${f.id}">${f.color ? `<span class="dot" style="background:${f.color}"></span>` : ''}${esc(f.label)} <span class="n">${n}</span></button>`;
+  }).join('');
+}
+
+function renderList() {
+  const card = $('#listCard');
+  if (!db.clients.length) {
+    card.innerHTML = `<div class="empty"><h2>Aucun client pour l'instant</h2>
+      <p>Importe ton tableau (Excel ou CSV) avec tes clients à démarcher, ou ajoute-les un par un.</p>
+      <p><button class="btn primary" data-act="import">📥 Importer mon tableau</button> <button class="btn" data-act="add">➕ Ajouter un client</button></p></div>`;
+    return;
+  }
+  const f = filtres().find(x => x.id === filtre) || filtres()[0];
+  const q = norm($('#search').value).trim();
+  let list = db.clients.filter(f.test);
+  if (q) list = list.filter(c => norm([c.entreprise, c.contact, c.telephone, c.email, c.ville, c.adresse, c.secteur, c.notes, ...Object.values(c.extra || {}), ...(c.interactions || []).map(a => a.note)].join(' ')).includes(q));
+  const sort = $('#sort').value, ordre = Object.fromEntries(STATUTS.map((s, i) => [s.id, i]));
+  list.sort((a, b) => {
+    if (sort === 'nom') return displayName(a).localeCompare(displayName(b), 'fr');
+    if (sort === 'statut') return (ordre[a.statut] - ordre[b.statut]) || displayName(a).localeCompare(displayName(b), 'fr');
+    if (sort === 'dernier') return (lastAction(b)?.date || '').localeCompare(lastAction(a)?.date || '');
+    // relance : relances datées d'abord (plus anciennes en premier), puis jamais contactés, puis le reste
+    const ra = a.relance || '9999', rb = b.relance || '9999';
+    return ra.localeCompare(rb) || displayName(a).localeCompare(displayName(b), 'fr');
+  });
+  if (!list.length) { card.innerHTML = `<div class="empty">Aucun client ne correspond à ce filtre.</div>`; return; }
+  const t = today();
+  card.innerHTML = `<table><thead><tr>
+      <th>Client</th><th>Statut</th><th>Dernière action</th><th>Actions faites</th><th>Relance</th><th></th>
+    </tr></thead><tbody>${list.map(c => {
+      const last = lastAction(c), nA = countType(c, 'appel'), nM = countType(c, 'mail');
+      const cls = c.relance ? (c.relance < t ? 'overdue' : c.relance === t ? 'today' : '') : '';
+      return `<tr data-id="${c.id}" class="${cls}">
+        <td class="c-name"><div class="name">${esc(displayName(c))}</div>
+          <div class="sub">${[c.entreprise && c.contact ? esc(c.contact) : '', c.ville ? esc(c.ville) : ''].filter(Boolean).join(' · ')}</div>
+          <div class="sub">${c.telephone ? `<a href="tel:${esc(c.telephone.replace(/[^\d+]/g, ''))}" data-stop>${esc(c.telephone)}</a>` : ''}${c.telephone && c.email ? ' · ' : ''}${c.email ? `<a href="mailto:${esc(c.email)}" data-stop>${esc(c.email)}</a>` : ''}</div></td>
+        <td class="c-status">${badge(c.statut)}</td>
+        <td class="c-last">${last ? `<div>${esc(actionLabel(last))}</div><div class="sub">${esc(fmtDT(last.date))}${last.note ? ' — ' + esc(last.note.length > 60 ? last.note.slice(0, 60) + '…' : last.note) : ''}</div>` : '<span class="sub">—</span>'}</td>
+        <td class="c-counts">${nA || nM ? `${nA ? nA + ' 📞' : ''} ${nM ? nM + ' ✉️' : ''}` : ''}</td>
+        <td class="relance">${c.relance ? `⏰ ${esc(fmtDay(c.relance))}` : ''}</td>
+        <td class="c-btns"><div class="rowbtns">
+          <button class="btn small" data-quick="appel" title="Noter un appel">📞 Appel</button>
+          <button class="btn small" data-quick="mail" title="Noter un mail">✉️ Mail</button>
+        </div></td></tr>`;
+    }).join('')}</tbody></table>`;
+}
+
+/* ---------- Fiche client ---------- */
+let currentId = null;
+const getClient = id => db.clients.find(c => c.id === id);
+
+function openClient(id) {
+  currentId = id;
+  renderClient();
+  openOv('#ovClient');
+}
+function renderClient() {
+  const c = getClient(currentId); if (!c) return;
+  $('#clientTitle').textContent = displayName(c);
+  const field = (k, label, type = 'text') => `<label class="f">${label}<input type="${type}" data-field="${k}" value="${esc(c[k] || '')}"></label>`;
+  const hist = [...(c.interactions || [])].sort((a, b) => b.date.localeCompare(a.date));
+  const extra = Object.entries(c.extra || {}).filter(([, v]) => String(v).trim());
+  $('#clientBody').innerHTML = `
+    <div class="grid2">
+      <label class="f">Statut<select data-field="statut">${STATUTS.map(s => `<option value="${s.id}" ${c.statut === s.id ? 'selected' : ''}>${esc(s.label)}</option>`).join('')}</select></label>
+      <label class="f">Prochaine relance<input type="date" data-field="relance" value="${esc(c.relance || '')}"></label>
+    </div>
+    <div class="section-t"><span>Historique des contacts</span>
+      <span class="actions">${Object.entries(TYPES).map(([t, v]) => `<button class="btn small" data-new="${t}">${v.ico} ${v.label}</button>`).join('')}</span></div>
+    ${hist.length ? `<ul class="history">${hist.map(a => `<li>
+        <div class="ico">${TYPES[a.type]?.ico || '•'}</div>
+        <div class="main"><div><b>${esc(RESULTAT[a.type + ':' + a.resultat]?.label || TYPES[a.type]?.label || '')}</b> <span class="sub">· ${esc(fmtDT(a.date))}</span></div>
+          ${a.note ? `<div class="note">${esc(a.note)}</div>` : ''}</div>
+        <button class="btn icon small" data-edit-act="${a.id}" title="Modifier">✏️</button>
+        <button class="btn icon small" data-del-act="${a.id}" title="Supprimer">🗑</button>
+      </li>`).join('')}</ul>` : '<p class="hint">Aucun contact enregistré pour l\'instant.</p>'}
+    <div class="section-t">Coordonnées</div>
+    <div class="grid2">
+      ${field('entreprise', 'Entreprise / Nom client')}
+      ${field('contact', 'Contact (personne)')}
+      ${field('telephone', 'Téléphone', 'tel')}
+      ${field('email', 'Email', 'email')}
+      ${field('ville', 'Ville / station')}
+      ${field('secteur', 'Secteur / type')}
+      <label class="f full">Adresse<input data-field="adresse" value="${esc(c.adresse || '')}"></label>
+      <label class="f full">Notes générales<textarea data-field="notes">${esc(c.notes || '')}</textarea></label>
+    </div>
+    ${extra.length ? `<div class="section-t">Autres infos (tableau importé)</div><dl class="extra">${extra.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl>` : ''}`;
+}
+
+/* ---------- Saisie d'une action ---------- */
+let act = null; // { clientId, id (si édition), type, resultat }
+function openAction(clientId, type, actionId) {
+  const c = getClient(clientId); if (!c) return;
+  const existing = actionId ? c.interactions.find(a => a.id === actionId) : null;
+  act = { clientId, id: existing?.id || null, type: existing?.type || type, resultat: existing?.resultat || null };
+  $('#actionTitle').textContent = `${existing ? 'Modifier' : 'Nouvelle action'} — ${displayName(c)}`;
+  $('#aDate').value = existing?.date || nowLocal();
+  $('#aNote').value = existing?.note || '';
+  $('#aStatut').innerHTML = STATUTS.map(s => `<option value="${s.id}">${esc(s.label)}</option>`).join('');
+  $('#aStatut').value = c.statut;
+  $('#aRelance').value = c.relance || '';
+  renderActionForm();
+  openOv('#ovAction');
+  setTimeout(() => $('#actionResults .chip')?.focus(), 50);
+}
+function renderActionForm() {
+  $('#actionTypes').innerHTML = Object.entries(TYPES).map(([t, v]) => `<button class="chip ${act.type === t ? 'on' : ''}" data-type="${t}">${v.ico} ${v.label}</button>`).join('');
+  const rs = RESULTATS[act.type];
+  $('#resultHint').style.display = rs.length ? '' : 'none';
+  $('#actionResults').innerHTML = rs.map(r => `<button class="chip ${act.resultat === r.id ? 'on' : ''}" data-res="${r.id}">${esc(r.label)}</button>`).join('');
+}
+function pickResult(id) {
+  act.resultat = id;
+  const r = RESULTAT[act.type + ':' + id], c = getClient(act.clientId);
+  if (r) {
+    if (r.statut && !(r.soft && !FAIBLES.includes(c.statut))) $('#aStatut').value = r.statut;
+    else $('#aStatut').value = c.statut;
+    $('#aRelance').value = r.j ? plusDays(r.j) : '';
+  }
+  renderActionForm();
+}
+function saveAction() {
+  const c = getClient(act.clientId); if (!c) return;
+  if (RESULTATS[act.type].length && !act.resultat) { toast('Choisis un résultat'); return; }
+  const data = { type: act.type, resultat: act.resultat, date: $('#aDate').value || nowLocal(), note: $('#aNote').value.trim() };
+  c.interactions = c.interactions || [];
+  if (act.id) Object.assign(c.interactions.find(a => a.id === act.id), data);
+  else c.interactions.push({ id: uid(), ...data });
+  c.statut = $('#aStatut').value;
+  c.relance = $('#aRelance').value || '';
+  save(); closeOv($('#ovAction')); render();
+  if ($('#ovClient').classList.contains('open')) renderClient();
+  toast('✅ Enregistré');
+}
+
+/* ---------- Import ---------- */
+let importRows = null, importHeaders = null;
+function guessField(h) {
+  const n = norm(h);
+  for (const f of CHAMPS) if (f.keys.some(k => n === ` ${k} `)) return f.id;
+  for (const f of CHAMPS) if (f.keys.some(k => n.includes(` ${k} `))) return f.id;
+  return '_extra';
+}
+function parseCSV(text) {
+  const sep = (text.split('\n')[0].match(/;/g) || []).length >= (text.split('\n')[0].match(/,/g) || []).length ? ';' : ',';
+  const rows = []; let row = [], cur = '', q = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (q) { if (ch === '"') { if (text[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += ch; }
+    else if (ch === '"') q = true;
+    else if (ch === sep) { row.push(cur); cur = ''; }
+    else if (ch === '\n' || ch === '\r') { if (ch === '\r' && text[i + 1] === '\n') i++; row.push(cur); rows.push(row); row = []; cur = ''; }
+    else cur += ch;
+  }
+  if (cur || row.length) { row.push(cur); rows.push(row); }
+  return rows;
+}
+async function readFile(file) {
+  if (window.XLSX) {
+    const wb = XLSX.read(await file.arrayBuffer(), { type: 'array', cellDates: true });
+    // Prend la feuille qui contient le plus de lignes
+    let best = null;
+    for (const name of wb.SheetNames) {
+      const rows = XLSX.utils.sheet_to_json(wb.Sheets[name], { header: 1, defval: '', raw: false, dateNF: 'dd/mm/yyyy' });
+      if (!best || rows.length > best.length) best = rows;
+    }
+    return best || [];
+  }
+  if (/\.(csv|txt)$/i.test(file.name)) return parseCSV((await file.text()).replace(/^﻿/, ''));
+  throw new Error('La lecture des fichiers Excel nécessite une connexion internet. Enregistre ton tableau en CSV ou reconnecte-toi.');
+}
+async function startImport(file) {
+  try {
+    let rows = (await readFile(file)).map(r => r.map(v => String(v ?? '').trim()));
+    const hi = rows.findIndex(r => r.filter(Boolean).length >= 2);
+    if (hi < 0) { toast('Fichier vide ou illisible'); return; }
+    importHeaders = rows[hi].map((h, i) => h || `Colonne ${i + 1}`);
+    importRows = rows.slice(hi + 1).filter(r => r.some(Boolean));
+    const guesses = importHeaders.map(guessField);
+    // "Nom" seul : entreprise si aucune colonne entreprise, sinon contact
+    const hasEnt = guesses.includes('entreprise');
+    guesses.forEach((g, i) => { if (g === 'nom') guesses[i] = hasEnt ? 'contact' : 'entreprise'; });
+    // Un seul mapping par champ (sauf notes et autres infos)
+    const seen = new Set();
+    guesses.forEach((g, i) => { if (!['_extra', 'notes', '_skip'].includes(g)) { if (seen.has(g)) guesses[i] = '_extra'; seen.add(g); } });
+    $('#importInfo').innerHTML = `<b>${importRows.length}</b> ligne(s) trouvée(s) dans <b>${esc(file.name)}</b>.`;
+    const opts = [...CHAMPS.filter(f => !f.hidden).map(f => [f.id, f.label]), ['_extra', 'Autre info (conservée)'], ['_skip', 'Ignorer']];
+    $('#importMap').innerHTML = importHeaders.map((h, i) => {
+      const ex = importRows.slice(0, 3).map(r => r[i]).filter(Boolean).join(' · ');
+      return `<div class="map-row"><div><b>${esc(h)}</b><div class="ex">${esc(ex.length > 70 ? ex.slice(0, 70) + '…' : ex)}</div></div>
+        <select data-col="${i}" class="btn">${opts.map(([v, l]) => `<option value="${v}" ${guesses[i] === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></div>`;
+    }).join('');
+    $('#importMode').innerHTML = db.clients.length ? `<b>Tu as déjà ${db.clients.length} client(s).</b><br>
+      <label><input type="radio" name="mode" value="add" checked> Ajouter à la liste (les doublons sont ignorés)</label><br>
+      <label><input type="radio" name="mode" value="replace"> Remplacer toute la liste (l'historique actuel sera perdu)</label>` : '';
+    openOv('#ovImport');
+  } catch (e) { console.error(e); toast('⚠️ ' + (e.message || 'Import impossible')); }
+}
+function statutFromText(t) {
+  const n = norm(t);
+  if (!n.trim()) return 'a_contacter';
+  if (/ pas interesse| non interesse| refus| non /.test(n)) return 'pas_interesse';
+  if (/ sign| client /.test(n)) return 'signe';
+  if (/ rdv | rendez vous/.test(n)) return 'rdv';
+  if (/ interesse/.test(n)) return 'interesse';
+  if (/ rappel| relanc/.test(n)) return 'a_relancer';
+  if (/ repondu| reponse/.test(n)) return 'repondu';
+  if (/ sans reponse| pas de reponse| contacte| messagerie/.test(n)) return 'en_cours';
+  return 'a_contacter';
+}
+function doImport() {
+  const map = [...document.querySelectorAll('#importMap select')].map(s => s.value);
+  const replace = document.querySelector('input[name=mode]:checked')?.value === 'replace';
+  if (replace && !confirm('Remplacer toute la liste et perdre l\'historique actuel ?')) return;
+  const base = replace ? [] : db.clients;
+  const key = c => norm(c.email).trim() || norm((c.entreprise || '') + (c.contact || '') + (c.telephone || '')).trim();
+  const known = new Set(base.map(key));
+  let added = 0, dup = 0;
+  const neu = [];
+  for (const r of importRows) {
+    const c = { id: uid(), entreprise: '', contact: '', telephone: '', email: '', ville: '', adresse: '', secteur: '', notes: '', statut: 'a_contacter', relance: '', interactions: [], extra: {} };
+    let prenom = '';
+    map.forEach((f, i) => {
+      const v = r[i] || ''; if (!v || f === '_skip') return;
+      if (f === '_extra') c.extra[importHeaders[i]] = v;
+      else if (f === 'prenom') prenom = v;
+      else if (f === 'statut') { c.statut = statutFromText(v); c.extra[importHeaders[i]] = v; }
+      else if (f === 'notes' || f === 'adresse') c[f] = c[f] ? c[f] + ' — ' + v : v;
+      else c[f] = c[f] ? c[f] + ' ' + v : v;
+    });
+    if (prenom) c.contact = (prenom + ' ' + c.contact).trim();
+    if (!c.entreprise && !c.contact && !c.email && !c.telephone) continue;
+    const k = key(c);
+    if (k && known.has(k)) { dup++; continue; }
+    known.add(k); neu.push(c); added++;
+  }
+  db.clients = base.concat(neu);
+  save(); closeOv($('#ovImport')); filtre = 'tous'; render();
+  toast(`✅ ${added} client(s) importé(s)${dup ? `, ${dup} doublon(s) ignoré(s)` : ''}`);
+}
+
+/* ---------- Export ---------- */
+function exportData() {
+  if (!db.clients.length) { toast('Rien à exporter'); return; }
+  const extraKeys = [...new Set(db.clients.flatMap(c => Object.keys(c.extra || {})))];
+  const clients = db.clients.map(c => {
+    const last = lastAction(c);
+    const row = {
+      'Entreprise / Client': c.entreprise, 'Contact': c.contact, 'Téléphone': c.telephone, 'Email': c.email,
+      'Ville': c.ville, 'Adresse': c.adresse, 'Secteur': c.secteur, 'Statut': STATUT[c.statut]?.label || '',
+      'Nb appels': countType(c, 'appel'), 'Nb mails': countType(c, 'mail'),
+      'Dernier contact': last ? last.date.replace('T', ' ') : '', 'Dernier résultat': last ? actionLabel(last).replace(/^\S+\s/, '') : '',
+      'Dernier commentaire': last?.note || '', 'Prochaine relance': c.relance, 'Notes': c.notes,
+    };
+    for (const k of extraKeys) row[k] = c.extra?.[k] || '';
+    return row;
+  });
+  const hist = db.clients.flatMap(c => (c.interactions || []).map(a => ({
+    'Entreprise / Client': displayName(c), 'Contact': c.contact, 'Date': a.date.replace('T', ' '),
+    'Type': TYPES[a.type]?.label || a.type, 'Résultat': RESULTAT[a.type + ':' + a.resultat]?.label || '', 'Commentaire': a.note,
+  }))).sort((a, b) => a.Date.localeCompare(b.Date));
+  const name = `prospection-${today()}`;
+  if (window.XLSX) {
+    const wb = XLSX.utils.book_new();
+    const ws1 = XLSX.utils.json_to_sheet(clients); ws1['!cols'] = Object.keys(clients[0]).map(k => ({ wch: Math.min(40, Math.max(12, k.length + 2)) }));
+    XLSX.utils.book_append_sheet(wb, ws1, 'Clients');
+    const ws2 = XLSX.utils.json_to_sheet(hist.length ? hist : [{ 'Entreprise / Client': '', 'Contact': '', 'Date': '', 'Type': '', 'Résultat': '', 'Commentaire': '' }]);
+    ws2['!cols'] = [{ wch: 30 }, { wch: 20 }, { wch: 17 }, { wch: 12 }, { wch: 32 }, { wch: 60 }];
+    XLSX.utils.book_append_sheet(wb, ws2, 'Historique');
+    XLSX.writeFile(wb, name + '.xlsx');
+  } else {
+    const cols = Object.keys(clients[0]);
+    const csv = [cols, ...clients.map(r => cols.map(k => r[k]))].map(r => r.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(';')).join('\r\n');
+    download(name + '.csv', '﻿' + csv, 'text/csv;charset=utf-8');
+  }
+  toast('📤 Export téléchargé');
+}
+
+/* ---------- Événements ---------- */
+$('#btnImport').onclick = () => $('#fileImport').click();
+$('#fileImport').onchange = e => { const f = e.target.files[0]; e.target.value = ''; if (f) startImport(f); };
+$('#btnDoImport').onclick = doImport;
+$('#btnExport').onclick = exportData;
+$('#btnMore').onclick = () => { $('#lastSave').textContent = db.savedAt ? `Dernier enregistrement : ${new Date(db.savedAt).toLocaleString('fr-FR')}` : ''; openOv('#ovMore'); };
+$('#btnBackup').onclick = () => download(`cardex-sauvegarde-${today()}.json`, JSON.stringify(db, null, 1), 'application/json');
+$('#btnRestore').onclick = () => $('#fileRestore').click();
+$('#fileRestore').onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  try {
+    const d = JSON.parse(await f.text());
+    if (!Array.isArray(d.clients)) throw new Error();
+    if (!confirm(`Restaurer ${d.clients.length} client(s) ? Les données actuelles seront remplacées.`)) return;
+    db = d; save(); render(); closeOv($('#ovMore')); toast('♻️ Sauvegarde restaurée');
+  } catch { toast('⚠️ Fichier de sauvegarde invalide'); }
+};
+$('#btnReset').onclick = () => { if (confirm('Effacer TOUS les clients et leur historique ? (pense à exporter avant)')) { db = { clients: [] }; save(); render(); closeOv($('#ovMore')); } };
+$('#btnAdd').onclick = addClient;
+function addClient() {
+  const c = { id: uid(), entreprise: '', contact: '', telephone: '', email: '', ville: '', adresse: '', secteur: '', notes: '', statut: 'a_contacter', relance: '', interactions: [], extra: {} };
+  db.clients.push(c); save(); render(); openClient(c.id);
+  setTimeout(() => document.querySelector('#clientBody [data-field=entreprise]')?.focus(), 50);
+}
+$('#btnDelete').onclick = () => {
+  const c = getClient(currentId); if (!c) return;
+  if (!confirm(`Supprimer « ${displayName(c)} » et tout son historique ?`)) return;
+  db.clients = db.clients.filter(x => x.id !== currentId); save(); closeOv($('#ovClient')); render();
+};
+$('#search').oninput = renderList;
+$('#sort').onchange = renderList;
+$('#chips').onclick = e => { const b = e.target.closest('[data-filter]'); if (b) { filtre = b.dataset.filter; renderChips(); renderList(); } };
+$('#listCard').onclick = e => {
+  if (e.target.closest('[data-stop]')) return;
+  const a = e.target.closest('[data-act]'); if (a) { a.dataset.act === 'import' ? $('#fileImport').click() : addClient(); return; }
+  const tr = e.target.closest('tr[data-id]'); if (!tr) return;
+  const q = e.target.closest('[data-quick]');
+  if (q) openAction(tr.dataset.id, q.dataset.quick); else openClient(tr.dataset.id);
+};
+$('#clientBody').addEventListener('change', e => {
+  const k = e.target.dataset.field; if (!k) return;
+  const c = getClient(currentId); c[k] = e.target.value.trim(); save(); render();
+  if (k === 'entreprise' || k === 'contact') $('#clientTitle').textContent = displayName(c);
+});
+$('#clientBody').onclick = e => {
+  const n = e.target.closest('[data-new]'); if (n) return openAction(currentId, n.dataset.new);
+  const ed = e.target.closest('[data-edit-act]'); if (ed) return openAction(currentId, null, ed.dataset.editAct);
+  const d = e.target.closest('[data-del-act]');
+  if (d && confirm('Supprimer cette action de l\'historique ?')) {
+    const c = getClient(currentId); c.interactions = c.interactions.filter(a => a.id !== d.dataset.delAct);
+    save(); render(); renderClient();
+  }
+};
+$('#actionTypes').onclick = e => { const b = e.target.closest('[data-type]'); if (b) { act.type = b.dataset.type; act.resultat = null; renderActionForm(); } };
+$('#actionResults').onclick = e => { const b = e.target.closest('[data-res]'); if (b) pickResult(b.dataset.res); };
+document.querySelectorAll('[data-plus]').forEach(b => b.onclick = () => { const n = +b.dataset.plus; $('#aRelance').value = n ? plusDays(n) : ''; });
+$('#btnSaveAction').onclick = saveAction;
+document.querySelectorAll('.overlay').forEach(ov => {
+  ov.addEventListener('click', e => { if (e.target === ov || e.target.closest('[data-close]')) closeOv(ov); });
+});
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  const open = [...document.querySelectorAll('.overlay.open')].pop(); if (open) closeOv(open);
+});
+
+load();
+render();
+</script>
+</body>
+</html>
