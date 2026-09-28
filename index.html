@@ -456,48 +456,28 @@ function closeOv(el) { el.classList.remove('open'); if (el.id === 'ovAsk' && ask
 const telHref = t => ((String(t).match(/\+?\d[\d .-]{5,}\d/) || [''])[0]).replace(/[^\d+]/g, '');
 const mailList = m => String(m || '').match(/[^\s·,;]+@[^\s·,;]+/g) || [];
 const MAIL_SUBJECT = 'Private Chef & Butler Courchevel et Méribel 2026 / 2027';
-// Corps du mail : en anglais si le message LinkedIn du prospect est en anglais, sinon en français.
+// Prénom utilisé dans « Bonjour … » : champ dédié s'il existe, sinon prénom du contact.
+function mailPrenom(c) {
+  if (c && typeof c.destinataire === 'string') return c.destinataire.trim();
+  const who = ((c && c.contact) || '').trim();
+  return !who ? '' : /&| et /.test(who) ? who : who.split(/\s+/)[0];
+}
 function mailBody(c) {
-  c = c || {};
-  const en = /^\s*hi\b/i.test((c.extra || {})['Message LinkedIn'] || '');
-  const who = (c.contact || '').trim();
-  const prenom = !who ? '' : /&| et /.test(who) ? who : who.split(/\s+/)[0];
-  const type = norm(c.secteur);
-  const kind = type.includes(' villa owner ') ? 'owner' : type.includes(' agence de placement ') ? 'agency' : 'manager';
-  if (en) {
-    const line = {
-      owner: 'We would love to take care of your guests at the chalet this winter: tailor-made menus, table service, wine pairings and a warm, discreet welcome.',
-      manager: 'We would love to support the chalets you look after this winter: tailor-made menus, table service, wine pairings and a warm, discreet welcome for your guests.',
-      agency: 'We are looking to join your roster this winter as a chef & butler duo for Alpine chalets.',
-    }[kind];
-    return `${prenom ? 'Hi ' + prenom : 'Hello'},
-
-I'm Quentin, butler & sommelier. My cousin (a private chef) and I both come from Michelin-starred restaurants, and together we run LCP, a private chef & butler duo for chalets in Courchevel and Méribel for the 2026 / 2027 season.
-
-${line}
-
-Would you be available for a short call in the coming days?
-
-Best regards,
-Quentin
-LCP – Private Chef & Butler`;
-  }
-  const ligne = {
-    owner: 'Nous serions ravis de prendre soin de vos hôtes au chalet cet hiver : menus sur mesure, service à table, accords mets et vins, et un accueil attentionné et discret.',
-    manager: 'Nous serions ravis d\'accompagner les chalets que vous gérez cet hiver : menus sur mesure, service à table, accords mets et vins, et un accueil attentionné et discret pour vos clients.',
-    agency: 'Nous aimerions rejoindre votre réseau cet hiver en tant que binôme chef & butler pour les chalets des Alpes.',
-  }[kind];
+  const prenom = mailPrenom(c || {});
   return `Bonjour${prenom ? ' ' + prenom : ''},
 
-Je m'appelle Quentin, je suis butler et sommelier. Avec mon cousin, chef privé, nous venons tous les deux de la restauration étoilée et nous avons créé LCP : un duo chef privé & butler pour les chalets de Courchevel et Méribel, pour la saison 2026 / 2027.
+Quentin, Butler & Sommelier. Avec mon cousin Barthélémy, chef issu de la restauration étoilée, nous avons créé LCP, un duo Chef & Butler/Sommelier dédié aux chalets privés à Courchevel et Méribel cet hiver.
 
-${ligne}
+Nous proposons une prise en charge complète des expériences culinaires en chalet : cuisine sur mesure, produits frais et de qualité, service à table, accords mets & vins et, plus largement, toute l’attention nécessaire pour offrir aux clients une expérience fluide et haut de gamme, directement au chalet.
 
-Seriez-vous disponible pour un court échange téléphonique dans les prochains jours ?
+L’idée est d’apporter un véritable duo complémentaire, professionnel mais chaleureux, capable de s’adapter aussi bien à un dîner gastronomique qu’à un déjeuner familial ou à une semaine complète en chalet.
 
-Bien cordialement,
-Quentin
-LCP – Private Chef & Butler`;
+Nous serions ravis d’échanger avec vous et de voir si cela peut correspondre aux besoins de vos propriétaires et de vos clients cet hiver.
+
+Voici mon numéro : +33 6 52 89 47 80. N’hésitez pas à me dire quand vous avez un peu de temps, et nous pourrons nous appeler directement.
+
+Au plaisir d’échanger,
+Quentin`;
 }
 const gmailHref = (m, c) => 'https://mail.google.com/mail/?view=cm&fs=1&to=' + encodeURIComponent(m) + '&su=' + encodeURIComponent(MAIL_SUBJECT) + '&body=' + encodeURIComponent(mailBody(c));
 const mailtoHref = (m, c) => 'mailto:' + m + '?subject=' + encodeURIComponent(MAIL_SUBJECT) + '&body=' + encodeURIComponent(mailBody(c));
@@ -643,6 +623,7 @@ function renderClient() {
       ${field('contact', 'Contact (personne)')}
       ${field('telephone', 'Téléphone', 'tel')}
       ${field('email', 'Email', 'email')}
+      <label class="f">Prénom pour le mail (« Bonjour … »)<input data-field="destinataire" value="${esc(mailPrenom(c))}" placeholder="vide = « Bonjour, »"></label>
       ${mailList(c.email).length ? `<div class="full mailrow">${mailList(c.email).map(m => `<div class="mailline"><a class="btn primary small" href="${esc(gmailHref(m, c))}" target="_blank" rel="noopener">✉️ Écrire dans Gmail à ${esc(m)}</a><a class="btn small" href="${esc(mailtoHref(m, c))}" target="_blank" rel="noopener">Autre appli mail</a><button class="btn small" type="button" data-copy="${esc(m)}">Copier</button></div>`).join('')}</div>` : ''}
       ${field('ville', 'Ville / station')}
       ${field('secteur', 'Secteur / type')}
@@ -813,7 +794,7 @@ function exportData() {
   const clients = db.clients.map(c => {
     const last = lastAction(c);
     const row = {
-      'Entreprise / Client': c.entreprise, 'Contact': c.contact, 'Téléphone': c.telephone, 'Email': c.email,
+      'Entreprise / Client': c.entreprise, 'Contact': c.contact, 'Téléphone': c.telephone, 'Email': c.email, 'Prénom pour le mail': mailPrenom(c),
       'Ville': c.ville, 'Adresse': c.adresse, 'Secteur': c.secteur, 'Statut': STATUT[c.statut]?.label || '',
       'Nb appels': countType(c, 'appel'), 'Nb mails': countType(c, 'mail'),
       'Dernier contact': last ? last.date.replace('T', ' ') : '', 'Dernier résultat': last ? actionLabel(last).replace(/^\S+\s/, '') : '',
@@ -894,7 +875,7 @@ $('#clientBody').addEventListener('change', e => {
   const k = e.target.dataset.field; if (!k) return;
   const c = getClient(currentId); if (!c) return; c[k] = e.target.value.trim(); persist(c); render();
   if (k === 'entreprise' || k === 'contact') $('#clientTitle').textContent = displayName(c);
-  if (k === 'email') renderClient();
+  if (k === 'email' || k === 'destinataire') renderClient();
 });
 $('#clientBody').onclick = async e => {
   const cp = e.target.closest('[data-copy]');
