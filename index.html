@@ -21,7 +21,7 @@
     --danger: #ef6b6b; --shadow: 0 1px 3px rgba(0,0,0,.4);
     --s-gris: #9ca3af; --s-ambre: #e0a93b; --s-orange: #f08a4b; --s-bleu: #6b9bf2;
     --s-vert: #3ccf74; --s-violet: #a78bfa; --s-rouge: #f07171; --s-vert-f: #34d399;
-    --overdue: #3a2224; --today: #3a3220;
+    --overdue: #3a2224; --today: #3a3220; color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
@@ -30,7 +30,7 @@
   --danger: #ef6b6b; --shadow: 0 1px 3px rgba(0,0,0,.4);
   --s-gris: #9ca3af; --s-ambre: #e0a93b; --s-orange: #f08a4b; --s-bleu: #6b9bf2;
   --s-vert: #3ccf74; --s-violet: #a78bfa; --s-rouge: #f07171; --s-vert-f: #34d399;
-  --overdue: #3a2224; --today: #3a3220;
+  --overdue: #3a2224; --today: #3a3220; color-scheme: dark;
 }
 * { box-sizing: border-box; }
 body {
@@ -124,7 +124,8 @@ label.f textarea { min-height: 70px; resize: vertical; }
 .extra dd { margin: 0; word-break: break-word; }
 .map-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; align-items: center; padding: 5px 0; border-bottom: 1px solid var(--border); }
 .map-row .ex { color: var(--muted); font-size: 12.5px; }
-.toast { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); background: var(--text); color: var(--bg); padding: 10px 16px; border-radius: 8px; opacity: 0; transition: opacity .2s; pointer-events: none; z-index: 20; max-width: calc(100% - 32px); }
+#ovAsk { z-index: 15; }
+.toast { position: fixed; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); left: 50%; transform: translateX(-50%); background: var(--text); color: var(--bg); padding: 10px 16px; border-radius: 8px; opacity: 0; transition: opacity .2s; pointer-events: none; z-index: 20; max-width: calc(100% - 32px); }
 .toast.show { opacity: 1; }
 .hint { color: var(--muted); font-size: 13px; }
 
@@ -157,6 +158,7 @@ label.f textarea { min-height: 70px; resize: vertical; }
     </div>
   </header>
 
+  <p class="hint" id="sync" style="margin:-6px 0 12px"></p>
   <section class="stats" id="stats"></section>
 
   <div class="toolbar">
@@ -231,7 +233,7 @@ label.f textarea { min-height: 70px; resize: vertical; }
 <div class="overlay" id="ovMore"><div class="modal" role="dialog" aria-modal="true">
   <header><h2>Sauvegarde des données</h2><button class="btn icon" data-close>✕</button></header>
   <div class="body">
-    <p style="margin-top:0">Les données sont enregistrées automatiquement <b>dans ce navigateur, sur cet appareil</b>. Pense à télécharger une sauvegarde régulièrement (ou pour passer sur un autre ordinateur).</p>
+    <p style="margin-top:0">Les données sont enregistrées automatiquement. Télécharge une sauvegarde de temps en temps pour garder une copie de sécurité, ou pour transférer tes données depuis une autre version de l'outil.</p>
     <div class="actions">
       <button class="btn primary" id="btnBackup">💾 Télécharger une sauvegarde (.json)</button>
       <button class="btn" id="btnRestore">♻️ Restaurer une sauvegarde</button>
@@ -240,6 +242,12 @@ label.f textarea { min-height: 70px; resize: vertical; }
     <p class="hint" id="lastSave"></p>
   </div>
   <footer><button class="btn" data-close>Fermer</button></footer>
+</div></div>
+
+<!-- Confirmation -->
+<div class="overlay" id="ovAsk"><div class="modal" role="alertdialog" aria-modal="true" style="max-width:420px">
+  <div class="body"><p id="askText" style="margin:0;font-size:16px"></p></div>
+  <footer><button class="btn" id="askNo">Annuler</button><button class="btn primary" id="askOk">Confirmer</button></footer>
 </div></div>
 
 <div class="toast" id="toast"></div>
@@ -313,17 +321,72 @@ const CHAMPS = [
   { id: 'nom',        label: 'Nom (auto)',              keys: ['nom', 'name'], hidden: true },
 ];
 
-/* ---------- Stockage ---------- */
+/* ---------- Stockage ----------
+   En ligne (lien Claude) : chaque client est un document "clients/<id>" partagé entre appareils.
+   Fichier ouvert en local : repli sur le stockage du navigateur. */
 const KEY = 'cardex-prospection-v1';
 let db = { clients: [], savedAt: null };
+const store = { cloud: null, queue: {} };
 function load() {
   try { const raw = localStorage.getItem(KEY); if (raw) db = JSON.parse(raw); } catch (e) { console.warn(e); }
-  if (!Array.isArray(db.clients)) db.clients = [];
+  if (!db || !Array.isArray(db.clients)) db = { clients: [], savedAt: null };
 }
-function save() {
+function saveLocal() {
   db.savedAt = new Date().toISOString();
+  if (store.cloud) return;
   try { localStorage.setItem(KEY, JSON.stringify(db)); }
   catch (e) { toast('⚠️ Impossible d\'enregistrer dans ce navigateur — télécharge une sauvegarde.'); }
+}
+function cloudWrite(id, fn) {
+  // une écriture à la fois par document
+  const run = () => fn(store.cloud.doc('clients/' + id)).catch(e => {
+    console.error(e);
+    toast(e && e.code === 'quota_exceeded' ? '⚠️ Stockage plein : supprime des clients inutiles.' : '⚠️ Enregistrement en ligne impossible, réessaie.');
+  });
+  store.queue[id] = (store.queue[id] || Promise.resolve()).then(run);
+  return store.queue[id];
+}
+function persist(c) {
+  saveLocal();
+  if (store.cloud) return cloudWrite(c.id, ref => ref.set(JSON.parse(JSON.stringify(c))));
+}
+function unpersist(id) {
+  saveLocal();
+  if (store.cloud) return cloudWrite(id, ref => ref.delete());
+}
+async function persistMany(toWrite, toDelete = []) {
+  saveLocal();
+  if (!store.cloud) return;
+  const total = toWrite.length + toDelete.length; let done = 0;
+  for (const id of toDelete) { await cloudWrite(id, ref => ref.delete()); if (++done % 10 === 0) toast(`Enregistrement… ${done}/${total}`); }
+  for (const c of toWrite) { await persist(c); if (++done % 10 === 0) toast(`Enregistrement… ${done}/${total}`); }
+}
+async function connectCloud() {
+  if (!window.claude || typeof window.claude.use !== 'function') return setSync('local');
+  let cloud = null;
+  try { cloud = await window.claude.use('db'); } catch (e) { cloud = null; }
+  if (!cloud) return setSync('local');
+  store.cloud = cloud;
+  setSync('wait');
+  cloud.collection('clients').limit(1000).onSnapshot(snap => {
+    db.clients = snap.docs.map(d => JSON.parse(JSON.stringify(d.data())));
+    if (!snap.metadata.fromCache) setSync('cloud');
+    render();
+    const typing = document.activeElement && $('#clientBody').contains(document.activeElement);
+    if ($('#ovClient').classList.contains('open') && !typing) {
+      if (getClient(currentId)) renderClient(); else closeOv($('#ovClient'));
+    }
+  }, () => { setSync('error'); });
+}
+function setSync(state) {
+  const el = $('#sync'); if (!el) return;
+  el.dataset.state = state;
+  el.textContent = {
+    local: '💾 Enregistré sur cet appareil uniquement',
+    wait: '☁️ Connexion…',
+    cloud: '☁️ Enregistré en ligne — mêmes données sur téléphone et ordinateur',
+    error: '⚠️ Connexion perdue — recharge la page',
+  }[state];
 }
 
 /* ---------- Utilitaires ---------- */
@@ -350,13 +413,30 @@ function fmtDay(s) {
 const fmtDT = s => s ? fmtDay(s) + (s.length > 10 ? ' ' + s.slice(11, 16) : '') : '';
 function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('show'), 2600); }
 function badge(id) { const s = STATUT[id] || STATUT.a_contacter; return `<span class="badge" style="color:${s.color}"><span class="dot" style="background:${s.color}"></span>${esc(s.label)}</span>`; }
-function download(name, content, type) {
+async function download(name, content, type) {
   const blob = content instanceof Blob ? content : new Blob([content], { type });
+  let dl = null;
+  if (window.claude && typeof window.claude.use === 'function') { try { dl = await window.claude.use('downloads'); } catch (e) { dl = null; } }
+  if (dl) {
+    try { await dl.save({ filename: name, data: blob }); } catch (e) { if (e && e.code !== 'declined') toast('⚠️ Téléchargement impossible ici'); }
+    return;
+  }
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
   document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
+function ask(message, okLabel = 'Confirmer') {
+  $('#askText').textContent = message;
+  $('#askOk').textContent = okLabel;
+  openOv('#ovAsk');
+  return new Promise(resolve => {
+    const done = v => { ask.cancel = null; closeOv($('#ovAsk')); $('#askOk').onclick = $('#askNo').onclick = null; resolve(v); };
+    $('#askOk').onclick = () => done(true);
+    $('#askNo').onclick = () => done(false);
+    ask.cancel = () => done(false);
+  });
+}
 function openOv(id) { $(id).classList.add('open'); }
-function closeOv(el) { el.classList.remove('open'); }
+function closeOv(el) { el.classList.remove('open'); if (el.id === 'ovAsk' && ask.cancel) { const c = ask.cancel; ask.cancel = null; c(); } }
 const displayName = c => c.entreprise || c.contact || '(sans nom)';
 
 /* ---------- Données dérivées ---------- */
@@ -537,7 +617,7 @@ function saveAction() {
   else c.interactions.push({ id: uid(), ...data });
   c.statut = $('#aStatut').value;
   c.relance = $('#aRelance').value || '';
-  save(); closeOv($('#ovAction')); render();
+  persist(c); closeOv($('#ovAction')); render();
   if ($('#ovClient').classList.contains('open')) renderClient();
   toast('✅ Enregistré');
 }
@@ -617,10 +697,10 @@ function statutFromText(t) {
   if (/ sans reponse| pas de reponse| contacte| messagerie/.test(n)) return 'en_cours';
   return 'a_contacter';
 }
-function doImport() {
+async function doImport() {
   const map = [...document.querySelectorAll('#importMap select')].map(s => s.value);
   const replace = document.querySelector('input[name=mode]:checked')?.value === 'replace';
-  if (replace && !confirm('Remplacer toute la liste et perdre l\'historique actuel ?')) return;
+  if (replace && !(await ask('Remplacer toute la liste et perdre l\'historique actuel ?', 'Remplacer'))) return;
   const base = replace ? [] : db.clients;
   const key = c => norm(c.email).trim() || norm((c.entreprise || '') + (c.contact || '') + (c.telephone || '')).trim();
   const known = new Set(base.map(key));
@@ -643,8 +723,10 @@ function doImport() {
     if (k && known.has(k)) { dup++; continue; }
     known.add(k); neu.push(c); added++;
   }
+  const removed = replace ? db.clients.map(c => c.id) : [];
   db.clients = base.concat(neu);
-  save(); closeOv($('#ovImport')); filtre = 'tous'; render();
+  closeOv($('#ovImport')); filtre = 'tous'; render();
+  await persistMany(neu, removed);
   toast(`✅ ${added} client(s) importé(s)${dup ? `, ${dup} doublon(s) ignoré(s)` : ''}`);
 }
 
@@ -676,7 +758,7 @@ function exportData() {
     const ws2 = XLSX.utils.json_to_sheet(hist.length ? hist : [{ 'Entreprise / Client': '', 'Contact': '', 'Date': '', 'Type': '', 'Résultat': '', 'Commentaire': '' }]);
     ws2['!cols'] = [{ wch: 30 }, { wch: 20 }, { wch: 17 }, { wch: 12 }, { wch: 32 }, { wch: 60 }];
     XLSX.utils.book_append_sheet(wb, ws2, 'Historique');
-    XLSX.writeFile(wb, name + '.xlsx');
+    download(name + '.xlsx', new Blob([XLSX.write(wb, { bookType: 'xlsx', type: 'array' })]), 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
   } else {
     const cols = Object.keys(clients[0]);
     const csv = [cols, ...clients.map(r => cols.map(k => r[k]))].map(r => r.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(';')).join('\r\n');
@@ -698,21 +780,29 @@ $('#fileRestore').onchange = async e => {
   try {
     const d = JSON.parse(await f.text());
     if (!Array.isArray(d.clients)) throw new Error();
-    if (!confirm(`Restaurer ${d.clients.length} client(s) ? Les données actuelles seront remplacées.`)) return;
-    db = d; save(); render(); closeOv($('#ovMore')); toast('♻️ Sauvegarde restaurée');
+    closeOv($('#ovMore'));
+    if (!(await ask(`Restaurer ${d.clients.length} client(s) ? Les données actuelles seront remplacées.`, 'Restaurer'))) return;
+    const removed = db.clients.map(c => c.id).filter(id => !d.clients.some(x => x.id === id));
+    db = { clients: d.clients, savedAt: d.savedAt }; render();
+    await persistMany(db.clients, removed); toast('♻️ Sauvegarde restaurée');
   } catch { toast('⚠️ Fichier de sauvegarde invalide'); }
 };
-$('#btnReset').onclick = () => { if (confirm('Effacer TOUS les clients et leur historique ? (pense à exporter avant)')) { db = { clients: [] }; save(); render(); closeOv($('#ovMore')); } };
+$('#btnReset').onclick = async () => {
+  closeOv($('#ovMore'));
+  if (!(await ask('Effacer TOUS les clients et leur historique ? Pense à exporter avant.', 'Tout effacer'))) return;
+  const removed = db.clients.map(c => c.id); db.clients = []; render();
+  await persistMany([], removed); toast('Liste vidée');
+};
 $('#btnAdd').onclick = addClient;
 function addClient() {
   const c = { id: uid(), entreprise: '', contact: '', telephone: '', email: '', ville: '', adresse: '', secteur: '', notes: '', statut: 'a_contacter', relance: '', interactions: [], extra: {} };
-  db.clients.push(c); save(); render(); openClient(c.id);
+  db.clients.push(c); persist(c); render(); openClient(c.id);
   setTimeout(() => document.querySelector('#clientBody [data-field=entreprise]')?.focus(), 50);
 }
-$('#btnDelete').onclick = () => {
+$('#btnDelete').onclick = async () => {
   const c = getClient(currentId); if (!c) return;
-  if (!confirm(`Supprimer « ${displayName(c)} » et tout son historique ?`)) return;
-  db.clients = db.clients.filter(x => x.id !== currentId); save(); closeOv($('#ovClient')); render();
+  if (!(await ask(`Supprimer « ${displayName(c)} » et tout son historique ?`, 'Supprimer'))) return;
+  db.clients = db.clients.filter(x => x.id !== c.id); unpersist(c.id); closeOv($('#ovClient')); render();
 };
 $('#search').oninput = renderList;
 $('#sort').onchange = renderList;
@@ -726,16 +816,16 @@ $('#listCard').onclick = e => {
 };
 $('#clientBody').addEventListener('change', e => {
   const k = e.target.dataset.field; if (!k) return;
-  const c = getClient(currentId); c[k] = e.target.value.trim(); save(); render();
+  const c = getClient(currentId); if (!c) return; c[k] = e.target.value.trim(); persist(c); render();
   if (k === 'entreprise' || k === 'contact') $('#clientTitle').textContent = displayName(c);
 });
-$('#clientBody').onclick = e => {
+$('#clientBody').onclick = async e => {
   const n = e.target.closest('[data-new]'); if (n) return openAction(currentId, n.dataset.new);
   const ed = e.target.closest('[data-edit-act]'); if (ed) return openAction(currentId, null, ed.dataset.editAct);
   const d = e.target.closest('[data-del-act]');
-  if (d && confirm('Supprimer cette action de l\'historique ?')) {
-    const c = getClient(currentId); c.interactions = c.interactions.filter(a => a.id !== d.dataset.delAct);
-    save(); render(); renderClient();
+  if (d && await ask('Supprimer cette action de l\'historique ?', 'Supprimer')) {
+    const c = getClient(currentId); if (!c) return; c.interactions = c.interactions.filter(a => a.id !== d.dataset.delAct);
+    persist(c); render(); renderClient();
   }
 };
 $('#actionTypes').onclick = e => { const b = e.target.closest('[data-type]'); if (b) { act.type = b.dataset.type; act.resultat = null; renderActionForm(); } };
@@ -752,6 +842,7 @@ document.addEventListener('keydown', e => {
 
 load();
 render();
+connectCloud();
 </script>
 </body>
 </html>
