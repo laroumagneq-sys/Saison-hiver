@@ -128,7 +128,8 @@ label.f textarea { min-height: 70px; resize: vertical; }
 .toast { position: fixed; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); left: 50%; transform: translateX(-50%); background: var(--text); color: var(--bg); padding: 10px 16px; border-radius: 8px; opacity: 0; transition: opacity .2s; pointer-events: none; z-index: 20; max-width: calc(100% - 32px); }
 .toast.show { opacity: 1; }
 .hint { color: var(--muted); font-size: 13px; }
-.mailrow { display: flex; flex-wrap: wrap; gap: 6px; margin-top: -4px; }
+.mailrow { display: flex; flex-direction: column; gap: 6px; margin-top: -4px; }
+.mailline { display: flex; flex-wrap: wrap; gap: 6px; }
 .mailrow a.btn { text-decoration: none; overflow-wrap: anywhere; white-space: normal; }
 
 @media (max-width: 760px) {
@@ -454,6 +455,7 @@ function closeOv(el) { el.classList.remove('open'); if (el.id === 'ovAsk' && ask
 // Une case peut contenir plusieurs numéros / adresses : le lien prend le premier.
 const telHref = t => ((String(t).match(/\+?\d[\d .-]{5,}\d/) || [''])[0]).replace(/[^\d+]/g, '');
 const mailList = m => String(m || '').match(/[^\s·,;]+@[^\s·,;]+/g) || [];
+const gmailHref = m => 'https://mail.google.com/mail/?view=cm&fs=1&to=' + encodeURIComponent(m);
 const mailHref = m => (String(m).match(/[^\s·,;]+@[^\s·,;]+/) || [''])[0];
 const displayName = c => c.entreprise || c.contact || '(sans nom)';
 
@@ -549,7 +551,7 @@ function renderList() {
       return `<tr data-id="${c.id}" class="${cls}">
         <td class="c-name"><div class="name">${esc(displayName(c))}</div>
           <div class="sub">${[c.entreprise && c.contact ? esc(c.contact) : '', c.ville ? esc(c.ville) : ''].filter(Boolean).join(' · ')}</div>
-          <div class="sub">${c.telephone ? `<a href="tel:${esc(telHref(c.telephone))}" data-stop>${esc(c.telephone)}</a>` : ''}${c.telephone && c.email ? ' · ' : ''}${c.email ? `<a href="mailto:${esc(mailHref(c.email))}" target="_blank" rel="noopener" data-stop>${esc(c.email)}</a>` : ''}</div></td>
+          <div class="sub">${c.telephone ? `<a href="tel:${esc(telHref(c.telephone))}" data-stop>${esc(c.telephone)}</a>` : ''}${c.telephone && c.email ? ' · ' : ''}${c.email ? `<a href="${esc(gmailHref(mailHref(c.email)))}" target="_blank" rel="noopener" data-stop>${esc(c.email)}</a>` : ''}</div></td>
         <td class="c-status">${badge(c.statut)}</td>
         <td class="c-last">${last ? `<div>${esc(actionLabel(last))}</div><div class="sub">${esc(fmtDT(last.date))}${last.note ? ' — ' + esc(last.note.length > 60 ? last.note.slice(0, 60) + '…' : last.note) : ''}</div>` : '<span class="sub">—</span>'}</td>
         <td class="c-counts">${nA || nM ? `${nA ? nA + ' 📞' : ''} ${nM ? nM + ' ✉️' : ''}` : ''}</td>
@@ -596,7 +598,7 @@ function renderClient() {
       ${field('contact', 'Contact (personne)')}
       ${field('telephone', 'Téléphone', 'tel')}
       ${field('email', 'Email', 'email')}
-      ${mailList(c.email).length ? `<div class="full mailrow">${mailList(c.email).map(m => `<a class="btn primary small" href="mailto:${esc(m)}" target="_blank" rel="noopener">✉️ Écrire à ${esc(m)}</a><button class="btn small" type="button" data-copy="${esc(m)}">Copier</button>`).join('')}</div>` : ''}
+      ${mailList(c.email).length ? `<div class="full mailrow">${mailList(c.email).map(m => `<div class="mailline"><a class="btn primary small" href="${esc(gmailHref(m))}" target="_blank" rel="noopener">✉️ Écrire dans Gmail à ${esc(m)}</a><a class="btn small" href="mailto:${esc(m)}" target="_blank" rel="noopener">Autre appli mail</a><button class="btn small" type="button" data-copy="${esc(m)}">Copier</button></div>`).join('')}</div>` : ''}
       ${field('ville', 'Ville / station')}
       ${field('secteur', 'Secteur / type')}
       <label class="f full">Adresse<input data-field="adresse" value="${esc(c.adresse || '')}"></label>
