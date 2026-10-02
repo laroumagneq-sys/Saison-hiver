@@ -22,3 +22,11 @@ if (form) {
     window.open('https://wa.me/33652894780?text=' + encodeURIComponent(lines.join('\n')), '_blank', 'noopener');
   });
 }
+
+// Vidéos en boucle : arrêtées si l'utilisateur limite les animations
+if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  document.querySelectorAll('.loop-video').forEach(function (v) {
+    v.removeAttribute('autoplay');
+    v.pause();
+  });
+}
