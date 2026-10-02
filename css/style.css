@@ -1103,6 +1103,78 @@ body.menu-open .site-header::before { opacity: 0; }
   border-top: 1px solid var(--line);
 }
 
+/* Formules (Prestations) */
+
+.formulas {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.formula {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: clamp(40px, 5vw, 72px);
+  background: var(--ivory);
+  border: 1px solid var(--line);
+}
+
+.formula h2 {
+  font-size: clamp(2.4rem, 4vw, 3.6rem);
+  margin-bottom: 24px;
+}
+
+.formula .lead { margin-bottom: 36px; }
+
+.formula-list {
+  list-style: none;
+  margin: 0 0 44px;
+  padding: 0;
+  width: 100%;
+  flex: 1;
+}
+
+.formula-list li {
+  display: grid;
+  grid-template-columns: 150px 1fr;
+  gap: 20px;
+  padding: 18px 0;
+  border-top: 1px solid var(--line);
+  color: var(--stone);
+}
+
+.formula-list li:last-child { border-bottom: 1px solid var(--line); }
+
+.formula-list span {
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--gold-deep);
+  padding-top: 4px;
+}
+
+.formula-dark {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--on-dark);
+}
+
+.formula-dark .eyebrow,
+.formula-dark .formula-list span { color: var(--gold); }
+.formula-dark h2 em { color: var(--gold); }
+.formula-dark .lead,
+.formula-dark .formula-list li { color: var(--on-dark-muted); }
+.formula-dark .formula-list li { border-top-color: var(--line-dark); }
+.formula-dark .formula-list li:last-child { border-bottom-color: var(--line-dark); }
+
+.inline-link {
+  color: var(--ink);
+  border-bottom: 1px solid currentColor;
+  white-space: nowrap;
+}
+
 /* Moments signature */
 
 .signatures {
@@ -1537,6 +1609,7 @@ body.menu-open .site-header::before { opacity: 0; }
   .section:not(.dark) .steps li + li { border-top-color: var(--line); }
 
   .ledger li { grid-template-columns: 1fr; gap: 12px; padding: 36px 0; }
+  .formulas { grid-template-columns: 1fr; }
 
   .masonry { columns: 2; }
   .contact { grid-template-columns: 1fr; }
@@ -1557,6 +1630,8 @@ body.menu-open .site-header::before { opacity: 0; }
   .card-body p { max-height: none; opacity: 1; }
 
   .signatures li { grid-template-columns: 48px 1fr; gap: 12px; }
+  .formula-list li { grid-template-columns: 1fr; gap: 4px; }
+  .formula .btn { width: 100%; padding: 0 16px; letter-spacing: 0.14em; }
 
   .masonry { columns: 1; }
   .form { grid-template-columns: 1fr; }
