@@ -2,6 +2,10 @@
   var doc = document.documentElement;
   var body = document.body;
   var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var en = doc.lang === 'en';
+  var L = en
+    ? { close: 'Close', menu: 'Menu', hello: 'Hello LCP,', profile: 'I am: ', request: 'My request: ', duration: 'Duration: ', name: 'Name: ', email: 'Email: ', dates: 'Dates & location: ', guests: 'Guests: ', subject: 'LCP request' }
+    : { close: 'Fermer', menu: 'Menu', hello: 'Bonjour LCP,', profile: 'Je suis : ', request: 'Ma demande : ', duration: 'Durée : ', name: 'Nom : ', email: 'Email : ', dates: 'Dates & destination : ', guests: 'Convives : ', subject: 'Demande LCP' };
 
   // En-tête : transparent sur l'image d'ouverture, plein au défilement
   var header = document.querySelector('.site-header');
@@ -22,7 +26,7 @@
   function setMenu(open) {
     body.classList.toggle('menu-open', open);
     toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-    toggle.querySelector('.label').textContent = open ? 'Fermer' : 'Menu';
+    toggle.querySelector('.label').textContent = open ? L.close : L.menu;
     menu.setAttribute('aria-hidden', open ? 'false' : 'true');
   }
   if (toggle && menu) {
@@ -107,28 +111,32 @@
   // Formulaire de contact : ouvre la demande pré-remplie dans WhatsApp ou par e-mail
   var form = document.getElementById('contact-form');
   if (form) {
-    var wanted = new URLSearchParams(window.location.search).get('demande');
-    if (wanted) {
-      var pre = form.querySelector('input[name="formula"][value="' + wanted.replace(/"/g, '') + '"]');
+    var params = new URLSearchParams(window.location.search);
+    [['demande', 'formula'], ['profil', 'profile']].forEach(function (pair) {
+      var wanted = params.get(pair[0]);
+      if (!wanted) return;
+      var pre = form.querySelector('input[name="' + pair[1] + '"][value="' + wanted.replace(/"/g, '') + '"]');
       if (pre) pre.checked = true;
-    }
+    });
     form.addEventListener('submit', function (e) {
       e.preventDefault();
       var f = form.elements;
-      var lines = ['Bonjour LCP,'];
+      var lines = [L.hello];
+      var profile = form.querySelector('input[name="profile"]:checked');
       var formula = form.querySelector('input[name="formula"]:checked');
       var duration = form.querySelector('input[name="duration"]:checked');
-      if (formula) lines.push('Ma demande : ' + formula.value);
-      if (duration) lines.push('Durée : ' + duration.value);
-      if (f.name.value) lines.push('Nom : ' + f.name.value);
-      if (f.email.value) lines.push('Email : ' + f.email.value);
-      if (f.dates.value) lines.push('Dates & destination : ' + f.dates.value);
-      if (f.guests.value) lines.push('Convives : ' + f.guests.value);
+      if (profile) lines.push(L.profile + profile.value);
+      if (formula) lines.push(L.request + formula.value);
+      if (duration) lines.push(L.duration + duration.value);
+      if (f.name.value) lines.push(L.name + f.name.value);
+      if (f.email.value) lines.push(L.email + f.email.value);
+      if (f.dates.value) lines.push(L.dates + f.dates.value);
+      if (f.guests.value) lines.push(L.guests + f.guests.value);
       if (f.message.value) lines.push('', f.message.value);
       var body = lines.join('\n');
       var channel = e.submitter && e.submitter.getAttribute('data-channel');
       if (channel === 'email') {
-        var subject = 'Demande LCP' + (formula ? ' : ' + formula.value : '');
+        var subject = L.subject + (formula ? ' : ' + formula.value : '');
         window.location.href = 'mailto:lcp.experience@gmail.com?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
       } else {
         window.open('https://wa.me/33652894780?text=' + encodeURIComponent(body), '_blank', 'noopener');
