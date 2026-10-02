@@ -834,10 +834,10 @@ body.menu-open .site-header::before { opacity: 0; }
   display: grid;
   grid-template-columns: repeat(12, 1fr);
   gap: 24px;
-  align-items: end;
+  align-items: center;
 }
 
-.duo-media { grid-column: 1 / span 5; }
+.duo-media { grid-column: 1 / span 6; }
 .duo-text { grid-column: 7 / span 6; padding-bottom: 8px; }
 
 .duo-text h2 { margin-bottom: 28px; }
