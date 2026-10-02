@@ -1601,6 +1601,14 @@ body.menu-open .site-header::before { opacity: 0; }
   font-weight: 500;
 }
 
+.legal-list {
+  margin: 0 0 1.2em;
+  padding-left: 1.2em;
+  color: var(--stone);
+}
+
+.legal-list li { padding: 4px 0; }
+
 .legal-date { margin-top: 56px; font-size: 0.85rem; }
 
 .footer-bottom a { border-bottom: 1px solid var(--line-dark); }
