@@ -648,14 +648,20 @@ body.menu-open .site-header::before { opacity: 0; }
   justify-self: start;
 }
 
-/* Photo fondue dans le fond ivoire : 70 % d'opacité et bords estompés */
+/* Photo fondue dans le fond ivoire : 80 % d'opacité et bords légèrement estompés */
 .statement-photo img {
   width: 100%;
   aspect-ratio: 3 / 4;
   object-fit: cover;
-  opacity: .7;
-  -webkit-mask-image: radial-gradient(closest-side, #000 58%, transparent 100%);
-  mask-image: radial-gradient(closest-side, #000 58%, transparent 100%);
+  opacity: .8;
+  -webkit-mask-image:
+    linear-gradient(to right, transparent 0, #000 14%, #000 86%, transparent 100%),
+    linear-gradient(to bottom, transparent 0, #000 12%, #000 86%, transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-image:
+    linear-gradient(to right, transparent 0, #000 14%, #000 86%, transparent 100%),
+    linear-gradient(to bottom, transparent 0, #000 12%, #000 86%, transparent 100%);
+  mask-composite: intersect;
 }
 
 .statement blockquote {
