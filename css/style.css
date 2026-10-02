@@ -642,10 +642,20 @@ body.menu-open .site-header::before { opacity: 0; }
 
 .statement { align-items: center; }
 
-.statement-plates {
+.statement-photo {
   width: 100%;
-  max-width: 420px;
+  max-width: 440px;
   justify-self: start;
+}
+
+/* Photo fondue dans le fond ivoire : 70 % d'opacité et bords estompés */
+.statement-photo img {
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  opacity: .7;
+  -webkit-mask-image: radial-gradient(closest-side, #000 58%, transparent 100%);
+  mask-image: radial-gradient(closest-side, #000 58%, transparent 100%);
 }
 
 .statement blockquote {
@@ -1503,7 +1513,7 @@ body.menu-open .site-header::before { opacity: 0; }
   .section-head .lead { justify-self: start; }
 
   .statement { grid-template-columns: 1fr; gap: 40px; }
-  .statement-plates { max-width: 320px; justify-self: center; }
+  .statement-photo { max-width: 340px; justify-self: center; }
   .statement-body { grid-template-columns: 1fr; gap: 0; }
 
   .chapter, .duo, .portrait { grid-template-columns: 1fr; gap: 40px; }
