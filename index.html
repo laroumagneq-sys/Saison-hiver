@@ -4,14 +4,20 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>LCP — Chef privé & Sommelier pour chalets de luxe</title>
+<meta name="description" content="Chef privé et sommelier pour chalets de luxe à Méribel, Courchevel, Megève, Genève, Verbier et Gstaad. Cuisine gastronomique, service en salle et accords mets-vins chez vous.">
+<meta property="og:title" content="LCP — Chef privé & Sommelier pour chalets de luxe">
+<meta property="og:description" content="L'expérience des grands restaurants au service d'un chalet privé.">
+<meta property="og:image" content="img/chalet-table-soir.jpg">
+<link rel="preload" as="image" href="img/chalet-table-soir.jpg">
 <link rel="stylesheet" href="css/style.css">
 </head>
-<body>
+<body class="home">
 
-<header class="site-header">
+<header class="site-header over-hero">
   <div class="container">
     <a href="index.html" class="logo">LCP<span class="sub">Chef privé &amp; Sommelier</span></a>
-    <nav class="main-nav">
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="main-nav">Menu</button>
+    <nav class="main-nav" id="main-nav">
       <ul>
         <li><a href="index.html" class="active">Accueil</a></li>
         <li><a href="le-duo.html">Le Duo</a></li>
@@ -21,39 +27,46 @@
         <li><a href="galerie.html">Galerie</a></li>
         <li><a href="contact.html">Contact</a></li>
       </ul>
+      <a class="btn btn-gold nav-cta" href="contact.html">Réserver</a>
     </nav>
   </div>
 </header>
 
-<section class="hero">
-  <div class="hero-grid">
-    <div class="hero-photo">
-      <img src="img/quentin-cocktail-champagne.jpg" alt="Quentin au bar, cocktail et champagne">
+<section class="hero-full">
+  <img class="hero-bg" src="img/chalet-table-soir.jpg" alt="Table dressée pour un dîner dans un chalet, carafes de vin rouge et serviettes pliées" fetchpriority="high">
+  <div class="hero-content container">
+    <p class="eyebrow">Chef privé &amp; Sommelier · Alpes</p>
+    <h1>Votre chef et votre sommelier privés, dans votre chalet</h1>
+    <p class="hero-lead">Un dîner gastronomique servi comme dans une grande maison, sans quitter le chalet.</p>
+    <div class="hero-actions">
+      <a class="btn btn-gold" href="https://wa.me/33652894780?text=Bonjour%20LCP%2C%20je%20souhaite%20organiser%20un%20d%C3%AEner%20dans%20mon%20chalet." target="_blank" rel="noopener">Réserver sur WhatsApp</a>
+      <a class="btn btn-ghost" href="#duo">Découvrir le duo</a>
     </div>
-    <div class="hero-center">
-      <div class="hero-ornament">
-        <span class="line"></span>
-        <p class="eyebrow">Chef privé &amp; Sommelier</p>
-        <span class="line"></span>
-      </div>
-      <h1>LCP</h1>
-      <hr class="rule">
-      <p class="whatsapp">WhatsApp +33 6 52 89 47 80</p>
-      <p class="locations">
-        Méribel · Courchevel · Megève
-        <span class="minor">Genève · Verbier · Gstaad</span>
-      </p>
+    <p class="hero-places">Méribel · Courchevel · Megève · Genève · Verbier · Gstaad</p>
+  </div>
+</section>
+
+<section class="credentials">
+  <div class="container credentials-row">
+    <div>
+      <span class="cred-title">2 &amp; 3 étoiles Michelin</span>
+      <span class="cred-sub">Des parcours en grandes maisons</span>
     </div>
-    <div class="hero-photo">
-      <img src="img/barthelemy-portrait-2.jpg" alt="Barthélémy, chef privé">
+    <div>
+      <span class="cred-title">Sommelier WSET 3</span>
+      <span class="cred-sub">Accords, cave et cocktails sur mesure</span>
+    </div>
+    <div>
+      <span class="cred-title">Cuisine, salle &amp; cave</span>
+      <span class="cred-sub">Un seul duo pour toute la soirée</span>
     </div>
   </div>
 </section>
 
 <section>
-  <div class="container">
+  <div class="container intro">
     <blockquote class="tagline">« L'expérience des grands restaurants au service d'un chalet privé. »</blockquote>
-    <p style="text-align:center; color: var(--text-muted); max-width: 680px; margin: 0 auto;">
+    <p>
       Un duo qui orchestre chaque soirée : cuisine gastronomique à votre goût, service en salle sans faille,
       vins et cocktails adaptés à vos envies. Gastronomie à l'assiette ou service family style, aucun détail
       n'est laissé au hasard.
@@ -61,14 +74,43 @@
   </div>
 </section>
 
+<section class="alt" id="duo">
+  <div class="container">
+    <div class="duo-home">
+      <div class="duo-home-photo">
+        <img src="img/duo-portrait.jpg" alt="Barthélémy, chef privé, et Quentin, majordome et sommelier" loading="lazy" width="1200" height="1600">
+      </div>
+      <div class="duo-home-text">
+        <p class="eyebrow">Le Duo</p>
+        <h2>Barthélémy &amp; Quentin</h2>
+        <hr class="rule">
+        <p>Deux parcours en grande maison, réunis au service d'un chalet privé.</p>
+        <div class="duo-people">
+          <div>
+            <h3>Barthélémy</h3>
+            <span class="role">Chef privé</span>
+            <p>Parcours international en maisons 2 et 3 étoiles Michelin. Une cuisine fine, rythmée par les saisons, du dîner de dernière minute à la semaine en pension complète.</p>
+          </div>
+          <div>
+            <h3>Quentin</h3>
+            <span class="role">Majordome &amp; Sommelier, WSET 3</span>
+            <p>Sommelier en maison deux étoiles, ancien majordome privé à Monaco. Il compose les accords, le service en salle et s'occupe de la conciergerie.</p>
+          </div>
+        </div>
+        <a class="more" href="le-duo.html">Leur parcours en détail →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
 <section>
   <div class="container">
     <div class="dish-row">
       <div class="dish-carousel">
-        <img src="img/assiette-courgette-noisette-cutout.png" alt="Courgette, noisette et fleurs comestibles">
-        <img src="img/assiette-legumes-fleurs-cutout.png" alt="Assiette de légumes de saison et fleurs comestibles">
-        <img src="img/assiette-consomme-cutout.png" alt="Consommé, radis et thon mariné">
-        <img src="img/assiette-carpaccio-petits-pois-cutout.png" alt="Carpaccio, petits pois et fleurs comestibles">
+        <img src="img/assiette-courgette-noisette-cutout.png" alt="Courgette, noisette et fleurs comestibles" loading="lazy">
+        <img src="img/assiette-legumes-fleurs-cutout.png" alt="Assiette de légumes de saison et fleurs comestibles" loading="lazy">
+        <img src="img/assiette-consomme-cutout.png" alt="Consommé, radis et thon mariné" loading="lazy">
+        <img src="img/assiette-carpaccio-petits-pois-cutout.png" alt="Carpaccio, petits pois et fleurs comestibles" loading="lazy">
       </div>
       <div class="dish-text">
         <p class="eyebrow">L'Assiette</p>
@@ -83,8 +125,8 @@
 <section>
   <div class="container">
     <div class="dish-row reverse">
-      <div class="dish-carousel">
-        <img src="img/partage-table-buffet.jpg" alt="Table dressée pour un dîner en partage, chandelles et fruits" style="object-fit: cover; opacity: 1; animation: none;">
+      <div class="dish-carousel single">
+        <img src="img/partage-table-buffet.jpg" alt="Table dressée pour un dîner en partage, chandelles et fruits" loading="lazy">
       </div>
       <div class="dish-text">
         <p class="eyebrow">Le Partage</p>
@@ -100,8 +142,8 @@
   <div class="container">
     <div class="dish-row">
       <div class="dish-carousel two-photos">
-        <img src="img/quentin-decoupe-table.jpg" alt="Découpe en salle devant les convives" style="object-fit: cover;">
-        <img src="img/quentin-decoupe-station.jpg" alt="Précision de la découpe au guéridon" style="object-fit: cover;">
+        <img src="img/quentin-decoupe-table.jpg" alt="Découpe en salle devant les convives" loading="lazy">
+        <img src="img/quentin-decoupe-station.jpg" alt="Précision de la découpe au guéridon" loading="lazy">
       </div>
       <div class="dish-text">
         <p class="eyebrow">Le Service</p>
@@ -113,19 +155,41 @@
   </div>
 </section>
 
-<section class="alt">
+<section class="dark">
+  <div class="container">
+    <div class="section-head">
+      <p class="eyebrow">Comment ça se passe</p>
+      <h2>Votre soirée, en trois étapes</h2>
+      <hr class="rule">
+    </div>
+    <ol class="how-steps">
+      <li>
+        <span class="num">1</span>
+        <h3>Vous nous écrivez</h3>
+        <p>Vos dates, votre chalet, le nombre de convives et vos envies, sur WhatsApp ou par le formulaire.</p>
+      </li>
+      <li>
+        <span class="num">2</span>
+        <h3>Nous composons votre menu</h3>
+        <p>Menu à l'assiette ou en partage, accords mets-vins, allergies et préférences : tout est pensé avec vous.</p>
+      </li>
+      <li>
+        <span class="num">3</span>
+        <h3>Vous profitez de vos invités</h3>
+        <p>Le soir venu, cuisine, service en salle et cave sont entre nos mains. Vous n'avez qu'à passer à table.</p>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<section>
   <div class="container">
     <div class="section-head">
       <p class="eyebrow">Découvrir</p>
-      <h2>Un service sur mesure, en trois volets</h2>
+      <h2>Un service sur mesure</h2>
       <hr class="rule">
     </div>
     <div class="grid">
-      <div class="col">
-        <h3>Le Duo</h3>
-        <p>Barthélémy, chef privé, et Quentin, majordome &amp; sommelier WSET 3 — leurs parcours en 2 et 3 étoiles Michelin.</p>
-        <a class="more" href="le-duo.html">Découvrir le duo →</a>
-      </div>
       <div class="col">
         <h3>Animations de Salle</h3>
         <p>Découpe, flambage, décantation — des gestes de salle qui font de chaque dîner un moment de spectacle.</p>
@@ -150,12 +214,22 @@
   </div>
 </section>
 
-<section>
-  <div class="container" style="text-align:center;">
-    <h2>Réservez votre soirée</h2>
-    <p class="section-lead" style="margin-left:auto; margin-right:auto;">Contactez-nous directement sur WhatsApp ou via le formulaire de contact.</p>
-    <a href="https://wa.me/33652894780" class="btn" target="_blank" rel="noopener">Écrire sur WhatsApp</a>
-    <a href="contact.html" class="btn btn-outline" style="margin-left: 12px;">Voir les coordonnées</a>
+<section class="cta-final">
+  <div class="cta-final-grid">
+    <div class="cta-final-photo">
+      <img src="img/duo-complices.jpg" alt="Barthélémy et Quentin, souriants" loading="lazy">
+    </div>
+    <div class="cta-final-text">
+      <p class="eyebrow">Réservation</p>
+      <h2>Réservez votre soirée</h2>
+      <hr class="rule">
+      <p>Dites-nous vos dates et votre chalet : nous vous répondons rapidement avec une proposition sur mesure.</p>
+      <div class="hero-actions">
+        <a class="btn btn-gold" href="https://wa.me/33652894780?text=Bonjour%20LCP%2C%20je%20souhaite%20organiser%20un%20d%C3%AEner%20dans%20mon%20chalet." target="_blank" rel="noopener">Écrire sur WhatsApp</a>
+        <a class="btn btn-ghost" href="contact.html">Formulaire de contact</a>
+      </div>
+      <p class="cta-phone">WhatsApp <a href="https://wa.me/33652894780" target="_blank" rel="noopener">+33 6 52 89 47 80</a></p>
+    </div>
   </div>
 </section>
 
@@ -173,5 +247,11 @@
   </div>
 </footer>
 
+<a class="wa-float" href="https://wa.me/33652894780?text=Bonjour%20LCP%2C%20je%20souhaite%20organiser%20un%20d%C3%AEner%20dans%20mon%20chalet." target="_blank" rel="noopener" aria-label="Réserver sur WhatsApp">
+  <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.1l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.5-.3Z"/></svg>
+  <span>Réserver</span>
+</a>
+
+<script src="js/site.js"></script>
 </body>
 </html>

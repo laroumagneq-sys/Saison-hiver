@@ -11,7 +11,8 @@
 <header class="site-header">
   <div class="container">
     <a href="index.html" class="logo">LCP<span class="sub">Chef privé &amp; Sommelier</span></a>
-    <nav class="main-nav">
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="main-nav">Menu</button>
+    <nav class="main-nav" id="main-nav">
       <ul>
         <li><a href="index.html">Accueil</a></li>
         <li><a href="le-duo.html">Le Duo</a></li>
@@ -21,6 +22,7 @@
         <li><a href="galerie.html">Galerie</a></li>
         <li><a href="contact.html" class="active">Contact</a></li>
       </ul>
+      <a class="btn btn-gold nav-cta" href="contact.html">Réserver</a>
     </nav>
   </div>
 </header>
@@ -34,8 +36,8 @@
 </section>
 
 <section>
-  <div class="container grid" style="grid-template-columns: 1.3fr 1fr;">
-    <form>
+  <div class="container grid contact-grid">
+    <form id="contact-form">
       <div class="form-field">
         <label for="name">Nom</label>
         <input type="text" id="name" name="name" placeholder="Votre nom">
@@ -53,6 +55,7 @@
         <textarea id="message" name="message" rows="6" placeholder="Nombre de convives, envies particulières, allergies..."></textarea>
       </div>
       <button type="submit" class="btn">Envoyer la demande</button>
+      <p class="form-note">Votre demande s'ouvre dans WhatsApp, prête à être envoyée.</p>
     </form>
     <div class="contact-info">
       <div class="item">
@@ -81,5 +84,6 @@
   </div>
 </footer>
 
+<script src="js/site.js"></script>
 </body>
 </html>
