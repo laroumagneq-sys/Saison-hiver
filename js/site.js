@@ -104,7 +104,7 @@
     });
   }
 
-  // Formulaire de contact : ouvre la demande pré-remplie dans WhatsApp
+  // Formulaire de contact : ouvre la demande pré-remplie dans WhatsApp ou par e-mail
   var form = document.getElementById('contact-form');
   if (form) {
     var wanted = new URLSearchParams(window.location.search).get('demande');
@@ -125,7 +125,14 @@
       if (f.dates.value) lines.push('Dates & destination : ' + f.dates.value);
       if (f.guests.value) lines.push('Convives : ' + f.guests.value);
       if (f.message.value) lines.push('', f.message.value);
-      window.open('https://wa.me/33652894780?text=' + encodeURIComponent(lines.join('\n')), '_blank', 'noopener');
+      var body = lines.join('\n');
+      var channel = e.submitter && e.submitter.getAttribute('data-channel');
+      if (channel === 'email') {
+        var subject = 'Demande LCP' + (formula ? ' : ' + formula.value : '');
+        window.location.href = 'mailto:lcp.experience@gmail.com?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+      } else {
+        window.open('https://wa.me/33652894780?text=' + encodeURIComponent(body), '_blank', 'noopener');
+      }
     });
   }
 })();
