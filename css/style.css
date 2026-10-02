@@ -1642,6 +1642,7 @@ body.menu-open .site-header::before { opacity: 0; }
 
   .page-hero { grid-template-columns: 1fr; min-height: 0; }
   .page-hero-media { order: -1; min-height: 0; aspect-ratio: 4 / 3.4; }
+  .page-hero-media img.crop-mobile-low { object-position: 50% 82% !important; }
   .page-hero-text { padding: 48px var(--gutter) 64px; }
   .page-hero-media::before {
     content: "";
