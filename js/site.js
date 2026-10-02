@@ -107,10 +107,19 @@
   // Formulaire de contact : ouvre la demande pré-remplie dans WhatsApp
   var form = document.getElementById('contact-form');
   if (form) {
+    var wanted = new URLSearchParams(window.location.search).get('demande');
+    if (wanted) {
+      var pre = form.querySelector('input[name="formula"][value="' + wanted.replace(/"/g, '') + '"]');
+      if (pre) pre.checked = true;
+    }
     form.addEventListener('submit', function (e) {
       e.preventDefault();
       var f = form.elements;
       var lines = ['Bonjour LCP,'];
+      var formula = form.querySelector('input[name="formula"]:checked');
+      var duration = form.querySelector('input[name="duration"]:checked');
+      if (formula) lines.push('Ma demande : ' + formula.value);
+      if (duration) lines.push('Durée : ' + duration.value);
       if (f.name.value) lines.push('Nom : ' + f.name.value);
       if (f.email.value) lines.push('Email : ' + f.email.value);
       if (f.dates.value) lines.push('Dates & destination : ' + f.dates.value);

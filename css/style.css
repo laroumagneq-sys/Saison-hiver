@@ -1432,6 +1432,71 @@ body.menu-open .site-header::before { opacity: 0; }
   color: var(--stone);
 }
 
+/* Choix (formulaire) */
+
+.choice {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+
+.choice legend {
+  padding: 20px 0 14px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--stone);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.field label.chip {
+  position: relative;
+  display: inline-block;
+  padding-top: 0;
+  text-transform: none;
+  letter-spacing: 0;
+  cursor: pointer;
+}
+
+.chip input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+
+.chip span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 46px;
+  padding: 0 20px;
+  border: 1px solid #8f8575;
+  font-family: var(--serif);
+  font-size: 1.15rem;
+  color: var(--ink);
+  transition: background-color .25s var(--ease), color .25s var(--ease), border-color .25s var(--ease);
+}
+
+.chip:hover span { border-color: var(--ink); }
+
+.chip input:checked + span {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--ivory);
+}
+
+.chip input:focus-visible + span {
+  outline: 2px solid var(--gold);
+  outline-offset: 3px;
+}
+
 /* ---------- Pied de page ---------- */
 
 .site-footer {
