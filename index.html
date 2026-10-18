@@ -182,7 +182,7 @@ td select{width:auto;padding:4px 6px}
     <select id="suiviYear"></select>
   </div>
   <div class="card tbl"><table id="suiviTable"></table></div>
-  <p class="note">Recettes = nuitées + ménage facturé − commissions. Dépenses réelles = toutes les dépenses saisies (pense à y mettre la mensualité du crédit). Dépenses prévues = coûts variables + ménage prestataire + charges fixes + crédit.</p>
+  <p class="note">Recettes = nuitées + ménage facturé − commissions. Dépenses réelles = dépenses saisies + mensualité du crédit (ajoutée automatiquement, réglable dans Paramètres). Dépenses prévues = coûts variables + ménage prestataire + charges fixes + crédit.</p>
 </section>
 
 <!-- PRÉVISION -->
@@ -248,7 +248,8 @@ const DEFAULT_PARAMS = {
     ['Très haute',.85],['Très haute',.90],['Haute',.65],['Intermédiaire',.40],['Basse',.25],['Intermédiaire',.35]
   ].map(([saison,occ]) => ({saison, occ, bloq:0})),
   commission:.03, varNuit:12, fixes:23900, credit:410000, taux:.035, duree:20, sejour:4,
-  croissTarifs:.03, croissFixes:.03, fiscal:0, ramp:[.7,.9,1], occMax:.95
+  croissTarifs:.03, croissFixes:.03, fiscal:0, ramp:[.7,.9,1], occMax:.95,
+  creditAuto:true, creditStart:''
 };
 
 const FIN_FIELDS = [
@@ -306,6 +307,7 @@ function defaultState(){
 let S;
 try { S = JSON.parse(localStorage.getItem(KEY)) || defaultState(); } catch(e){ S = defaultState(); }
 if (!S.params || !S.expenses) S = defaultState();
+if (S.params.creditAuto === undefined){ S.params.creditAuto = true; S.params.creditStart = ''; }
 function save(){ try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){} }
 
 /* ---------- format ---------- */
@@ -375,6 +377,17 @@ function expenseOccurrences(e){
   }
   return res;
 }
+// mensualité de crédit ajoutée automatiquement aux dépenses réelles
+function creditExpense(){
+  const P = S.params;
+  if (!P.creditAuto || !P.credit || !P.duree) return null;
+  const start = P.creditStart || `${P.startYear}-01`;
+  const [y,m] = start.split('-').map(Number), last = new Date(y, m-1 + P.duree*12 - 1, 1);
+  return {id:'auto-credit', auto:true, date:`${start}-01`, montant:Math.round(pmt(P.taux/12, P.duree*12, P.credit)*100)/100,
+    cat:'Mensualité crédit', unit:'', fournisseur:'Banque', note:'Calculée automatiquement', recur:'mensuel',
+    fin:`${last.getFullYear()}-${String(last.getMonth()+1).padStart(2,'0')}-01`};
+}
+function allExpenses(){ const c = creditExpense(); return c ? [c, ...S.expenses] : S.expenses; }
 function actuals(){
   const A = {};
   const get = k => A[k] || (A[k] = {ca:0, menage:0, commission:0, nuits:0, dep:0, cats:{}, menCout:0, n:0});
@@ -382,7 +395,7 @@ function actuals(){
     const a = get(ym(b.arrivee)), c = bookingCalc(b);
     a.ca += +b.montant; a.menage += c.menage; a.commission += c.commission; a.nuits += +b.nuits; a.n++;
   });
-  S.expenses.forEach(e => expenseOccurrences(e).forEach(o => {
+  allExpenses().forEach(e => expenseOccurrences(e).forEach(o => {
     const a = get(o.key); a.dep += o.montant; a.cats[e.cat] = (a.cats[e.cat]||0) + o.montant;
     if (e.cat === 'Ménage prestataire') a.menCout += o.montant;
   }));
@@ -461,7 +474,7 @@ function initDepForm(){
 }
 function renderDep(){
   initDepForm();
-  const months = [...new Set(S.expenses.map(e => ym(e.date)))].sort().reverse();
+  const months = [...new Set(allExpenses().map(e => ym(e.date)))].sort().reverse();
   const fm = $('#depFMonth'), fc = $('#depFCat'), fu = $('#depFUnit');
   const keep = [fm.value, fc.value, fu.value];
   fm.innerHTML = opt('','Tous les mois') + months.map(m => opt(m, ymLabel(m))).join('');
@@ -469,12 +482,12 @@ function renderDep(){
   fu.innerHTML = opt('*','Tous logements') + opt('','Général') + S.params.units.map(u => opt(u.id,u.short)).join('');
   [fm.value, fc.value, fu.value] = [keep[0]||'', keep[1]||'', keep[2]??'*'];
   if (![...fu.options].some(o=>o.value===fu.value)) fu.value='*';
-  const list = S.expenses.filter(e => (!fm.value || ym(e.date)===fm.value) && (!fc.value || e.cat===fc.value) && (fu.value==='*' || e.unit===fu.value))
+  const list = allExpenses().filter(e => (!fm.value || ym(e.date)===fm.value) && (!fc.value || e.cat===fc.value) && (fu.value==='*' || e.unit===fu.value))
     .sort((a,b) => b.date.localeCompare(a.date));
   const tot = list.reduce((s,e)=>s+ +e.montant,0);
   $('#depTable').innerHTML = list.length
     ? `<tr><th>Date</th><th class="l">Catégorie</th><th class="l">Logement</th><th class="l">Fournisseur / note</th><th>Montant</th><th></th></tr>` +
-      list.map(e => `<tr><td>${e.date.split('-').reverse().join('/')}</td><td class="l">${esc(e.cat)}${e.recur?` <span class="pill">${e.recur}</span>`:''}</td><td class="l">${esc(unitName(e.unit))}</td><td class="l">${esc([e.fournisseur,e.note].filter(Boolean).join(' — '))}</td><td>${eur2.format(e.montant)}</td><td><button class="btn ghost sm" data-edit-dep="${e.id}">Modifier</button> <button class="btn del sm" data-del-dep="${e.id}">✕</button></td></tr>`).join('') +
+      list.map(e => `<tr><td>${e.date.split('-').reverse().join('/')}</td><td class="l">${esc(e.cat)}${e.recur?` <span class="pill">${e.recur}</span>`:''}${e.auto?' <span class="pill">auto</span>':''}</td><td class="l">${esc(unitName(e.unit))}</td><td class="l">${esc([e.fournisseur,e.note].filter(Boolean).join(' — '))}</td><td>${eur2.format(e.montant)}</td><td>${e.auto ? `<button class="btn ghost sm" data-goto="param">Réglages</button>` : `<button class="btn ghost sm" data-edit-dep="${e.id}">Modifier</button> <button class="btn del sm" data-del-dep="${e.id}">✕</button>`}</td></tr>`).join('') +
       `<tr class="tot"><td colspan="4">Total (${list.length} ligne${list.length>1?'s':''}, montants unitaires)</td><td>${eur2.format(tot)}</td><td></td></tr>`
     : `<tr><td class="muted">Aucune dépense pour le moment.</td></tr>`;
 }
@@ -492,7 +505,7 @@ $('#depCancel').addEventListener('click', () => { editDep=null; $('#depForm').re
 ['#depFMonth','#depFCat','#depFUnit'].forEach(s => $(s).addEventListener('change', renderDep));
 $('#depCsv').addEventListener('click', () => {
   const rows = [['Date','Catégorie','Logement','Fournisseur','Note','Récurrence','Fin','Montant']]
-    .concat(S.expenses.slice().sort((a,b)=>a.date.localeCompare(b.date)).map(e => [e.date,e.cat,unitName(e.unit),e.fournisseur,e.note,e.recur,e.fin,String(e.montant).replace('.',',')]));
+    .concat(allExpenses().slice().sort((a,b)=>a.date.localeCompare(b.date)).map(e => [e.date,e.cat,unitName(e.unit),e.fournisseur,e.note,e.recur,e.fin,String(e.montant).replace('.',',')]));
   download('depenses-casa-amaro.csv', '﻿' + rows.map(r => r.map(c => `"${String(c??'').replace(/"/g,'""')}"`).join(';')).join('\n'), 'text/csv');
 });
 
@@ -621,12 +634,14 @@ function renderParam(){
   $('#pMonths').innerHTML = `<tr><th>Mois</th><th>Saison</th><th>Occupation cible (%)</th><th>Nuits bloquées</th></tr>` +
     P.months.map((m,i) => `<tr><td>${MONTHS[i]}</td><td><select data-p="months.${i}.saison" data-t="s">${SAISONS.map(s=>opt(s,s,s===m.saison)).join('')}</select></td><td><input type="number" step="1" data-p="months.${i}.occ" data-t="%" value="${+(m.occ*100).toFixed(2)}"></td><td><input type="number" min="0" data-p="months.${i}.bloq" value="${m.bloq}"></td></tr>`).join('');
   $('#pFin').innerHTML = FIN_FIELDS.map(([p,l,u]) => `<label>${l}${u?` (${u})`:''}<input type="number" step="any" data-p="${p}" ${u==='%'?'data-t="%"':''} value="${u==='%' ? +(getPath(P,p)*100).toFixed(3) : getPath(P,p)}"></label>`).join('') +
-    `<p class="note" style="grid-column:1/-1">Mensualité de crédit calculée : <strong>${eur2.format(pmt(P.taux/12,P.duree*12,P.credit))}</strong> / mois.</p>`;
+    `<label>Première échéance du crédit<input type="month" data-p="creditStart" data-t="s" value="${P.creditStart || `${P.startYear}-01`}"></label>` +
+    `<label style="flex-direction:row;align-items:center;gap:8px;align-self:end;padding-bottom:8px;grid-column:span 2"><input type="checkbox" data-p="creditAuto" data-t="b" ${P.creditAuto?'checked':''}> Ajouter la mensualité automatiquement aux dépenses réelles</label>` +
+    `<p class="note" style="grid-column:1/-1">Mensualité de crédit calculée : <strong>${eur2.format(pmt(P.taux/12,P.duree*12,P.credit))}</strong> / mois${P.creditAuto ? ', comptée chaque mois dans les dépenses à partir de la première échéance' : ''}.</p>`;
 }
 document.addEventListener('change', ev => {
   const p = ev.target.dataset.p; if (!p) return;
   const t = ev.target.dataset.t;
-  const v = t==='s' ? ev.target.value : t==='%' ? (+ev.target.value||0)/100 : (+ev.target.value||0);
+  const v = t==='b' ? ev.target.checked : t==='s' ? ev.target.value : t==='%' ? (+ev.target.value||0)/100 : (+ev.target.value||0);
   setPath(S.params, p, v); save(); renderAll();
 });
 $('#btnReset').addEventListener('click', () => { if (confirm('Remettre tous les paramètres aux valeurs du classeur ? (dépenses, réservations et tâches sont conservées)')){ S.params = clone(DEFAULT_PARAMS); delete S.scen; save(); renderAll(); } });
@@ -634,6 +649,7 @@ $('#btnReset').addEventListener('click', () => { if (confirm('Remettre tous les 
 /* ---------- actions de liste ---------- */
 document.addEventListener('click', ev => {
   const d = ev.target.dataset;
+  if (d.goto) show(d.goto);
   if (d.delDep && confirm('Supprimer cette dépense ?')){ S.expenses = S.expenses.filter(e=>e.id!==d.delDep); save(); renderAll(); }
   if (d.delRes && confirm('Supprimer cette réservation ?')){ S.bookings = S.bookings.filter(b=>b.id!==d.delRes); save(); renderAll(); }
   if (d.delTask){ S.tasks = S.tasks.filter(t=>t.id!==d.delTask); save(); renderLog(); }
