@@ -69,6 +69,8 @@ input[type=checkbox]{width:auto}
 .legend{display:flex;gap:14px;font-size:12.5px;color:var(--muted);margin-top:8px}
 .legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
 .pill{display:inline-block;padding:1px 8px;border-radius:99px;font-size:12px;background:var(--accent-soft);color:var(--accent)}
+h1 .pill{font-weight:500;vertical-align:2px}
+.pill.bad{color:var(--neg)}
 .note{font-size:13px;color:var(--muted);margin:6px 0 0}
 .task{display:flex;gap:10px;align-items:center;padding:7px 0;border-bottom:1px solid var(--line)}
 .task.done .t{text-decoration:line-through;color:var(--muted)}
@@ -77,14 +79,14 @@ input[type=checkbox]{width:auto}
 td input{width:90px;padding:4px 6px;text-align:right}
 td select{width:auto;padding:4px 6px}
 .hide{display:none}
-@media (max-width:600px){ h1 span{display:none} .top .btn{padding:3px 7px;font-size:12.5px} .kpi .v{font-size:19px} th,td{padding:6px 5px;font-size:13px} }
+@media (max-width:600px){ h1 span{display:none} h1{font-size:16px} h1 .pill{font-size:11px} .top .btn{padding:3px 7px;font-size:12.5px} .kpi .v{font-size:19px} th,td{padding:6px 5px;font-size:13px} }
 </style>
 </head>
 <body>
 <header>
   <div class="wrap">
     <div class="top">
-      <h1>Casa d'Amaro <span>· gestion</span></h1>
+      <h1>Casa d'Amaro <span>· gestion</span> <small id="syncState" class="pill">Données locales</small></h1>
       <div class="row">
         <button class="btn ghost sm" id="btnExport">Sauvegarder</button>
         <label class="btn ghost sm" style="flex-direction:row;color:var(--accent)">Restaurer<input type="file" id="fileImport" accept=".json" class="hide"></label>
@@ -307,8 +309,61 @@ function defaultState(){
 let S;
 try { S = JSON.parse(localStorage.getItem(KEY)) || defaultState(); } catch(e){ S = defaultState(); }
 if (!S.params || !S.expenses) S = defaultState();
-if (S.params.creditAuto === undefined){ S.params.creditAuto = true; S.params.creditStart = ''; }
-function save(){ try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){} }
+function migrate(){ if (S.params.creditAuto === undefined){ S.params.creditAuto = true; S.params.creditStart = ''; } }
+
+/* ---------- synchronisation en ligne (base de l'artifact) ----------
+   Sans base disponible (fichier ouvert en local), tout reste dans le navigateur. */
+let DB = null, DL = null;
+const stable = v => Array.isArray(v) ? '[' + v.map(stable).join(',') + ']'
+  : v && typeof v === 'object' ? '{' + Object.keys(v).sort().map(k => JSON.stringify(k) + ':' + stable(v[k])).join(',') + '}' : JSON.stringify(v);
+const synced = {config:null, expenses:new Map(), bookings:new Map()};
+const configOf = () => ({params:S.params, tasks:S.tasks, scen:S.scen || null});
+const queues = {};
+function write(path, fn){
+  queues[path] = (queues[path] || Promise.resolve()).then(fn).catch(e => setSync(e && e.code === 'quota_exceeded' ? 'Base pleine — supprime des anciennes lignes' : 'Erreur de synchronisation', true));
+}
+function pushChanges(){
+  const c = stable(configOf());
+  if (c !== synced.config){ synced.config = c; const body = clone(configOf()); write('config/main', () => DB.doc('config/main').set(body)); }
+  ['expenses','bookings'].forEach(col => {
+    const seen = new Set();
+    S[col].forEach(item => {
+      seen.add(item.id); const j = stable(item);
+      if (synced[col].get(item.id) !== j){ synced[col].set(item.id, j); const body = clone(item); write(col+'/'+item.id, () => DB.collection(col).doc(item.id).set(body)); }
+    });
+    [...synced[col].keys()].filter(id => !seen.has(id)).forEach(id => { synced[col].delete(id); write(col+'/'+id, () => DB.collection(col).doc(id).delete()); });
+  });
+}
+function save(){
+  try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){}
+  if (DB) pushChanges();
+}
+function setSync(text, bad){ const el = $('#syncState'); if (el){ el.textContent = text; el.className = 'pill' + (bad ? ' bad' : ''); } }
+async function connect(){
+  if (!window.claude || !window.claude.use) return;
+  claude.use('downloads').then(d => { DL = d; });
+  const db = await claude.use('db');
+  if (!db) return;
+  let first = {config:true, expenses:true, bookings:true}, ready = false;
+  const done = () => { if (!ready && !first.config && !first.expenses && !first.bookings){ ready = true; DB = db; setSync('Synchronisé'); } };
+  const fail = () => { DB = null; setSync('Hors ligne — données locales', true); };
+  db.doc('config/main').onSnapshot(snap => {
+    const d = snap.exists ? snap.data() : null, j = d ? stable({params:d.params, tasks:d.tasks, scen:d.scen ?? null}) : null;
+    if (d && j !== synced.config){ synced.config = j; S.params = clone(d.params); S.tasks = clone(d.tasks || []); S.scen = d.scen ? clone(d.scen) : undefined; migrate(); refresh(); }
+    if (!d && first.config) synced.config = null;
+    first.config = false; done();
+  }, fail);
+  ['expenses','bookings'].forEach(col => db.collection(col).onSnapshot(snap => {
+    const m = new Map(snap.docs.map(d => [d.id, stable(d.data())]));
+    const same = m.size === synced[col].size && [...m].every(([k,v]) => synced[col].get(k) === v);
+    if (!same || first[col]){ synced[col] = m; S[col] = snap.docs.map(d => clone(d.data())); refresh(); }
+    first[col] = false; done();
+  }, fail));
+}
+// re-rendu sans perdre la saisie en cours
+function refresh(){ const a = document.activeElement; if (a && a.closest && a.closest('#tab-param') && a.matches('input,select')) return; renderAll(); }
+
+migrate();
 
 /* ---------- format ---------- */
 const eur = new Intl.NumberFormat('fr-FR',{style:'currency',currency:'EUR',maximumFractionDigits:0});
@@ -468,8 +523,10 @@ function renderDash(){
 let editDep = null;
 function initDepForm(){
   const f = $('#depForm');
+  const keep = [f.cat.value, f.unit.value];
   f.cat.innerHTML = CATS.map(c => opt(c,c)).join('');
   f.unit.innerHTML = opt('','Général (toute la maison)') + S.params.units.map(u => opt(u.id,u.name)).join('');
+  if (keep[0]) f.cat.value = keep[0]; f.unit.value = keep[1] || '';
   if (!f.date.value) f.date.value = new Date().toISOString().slice(0,10);
 }
 function renderDep(){
@@ -635,7 +692,7 @@ function renderParam(){
     P.months.map((m,i) => `<tr><td>${MONTHS[i]}</td><td><select data-p="months.${i}.saison" data-t="s">${SAISONS.map(s=>opt(s,s,s===m.saison)).join('')}</select></td><td><input type="number" step="1" data-p="months.${i}.occ" data-t="%" value="${+(m.occ*100).toFixed(2)}"></td><td><input type="number" min="0" data-p="months.${i}.bloq" value="${m.bloq}"></td></tr>`).join('');
   $('#pFin').innerHTML = FIN_FIELDS.map(([p,l,u]) => `<label>${l}${u?` (${u})`:''}<input type="number" step="any" data-p="${p}" ${u==='%'?'data-t="%"':''} value="${u==='%' ? +(getPath(P,p)*100).toFixed(3) : getPath(P,p)}"></label>`).join('') +
     `<label>Première échéance du crédit<input type="month" data-p="creditStart" data-t="s" value="${P.creditStart || `${P.startYear}-01`}"></label>` +
-    `<label style="flex-direction:row;align-items:center;gap:8px;align-self:end;padding-bottom:8px;grid-column:span 2"><input type="checkbox" data-p="creditAuto" data-t="b" ${P.creditAuto?'checked':''}> Ajouter la mensualité automatiquement aux dépenses réelles</label>` +
+    `<label style="flex-direction:row;align-items:center;gap:8px;align-self:end;padding-bottom:8px;grid-column:1/-1"><input type="checkbox" data-p="creditAuto" data-t="b" ${P.creditAuto?'checked':''}> Ajouter la mensualité automatiquement aux dépenses réelles</label>` +
     `<p class="note" style="grid-column:1/-1">Mensualité de crédit calculée : <strong>${eur2.format(pmt(P.taux/12,P.duree*12,P.credit))}</strong> / mois${P.creditAuto ? ', comptée chaque mois dans les dépenses à partir de la première échéance' : ''}.</p>`;
 }
 document.addEventListener('change', ev => {
@@ -664,6 +721,7 @@ document.addEventListener('click', ev => {
 
 /* ---------- sauvegarde fichier ---------- */
 function download(name, content, type){
+  if (DL){ DL.save({filename:name, data:content}).catch(e => { if (e && e.code !== 'declined') alert("L'enregistrement du fichier n'est pas disponible ici."); }); return; }
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([content],{type})); a.download = name; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
 }
 $('#btnExport').addEventListener('click', () => download(`casa-amaro-${new Date().toISOString().slice(0,10)}.json`, JSON.stringify(S,null,1), 'application/json'));
@@ -689,6 +747,7 @@ function renderAll(){ TABS[cur](); }
 $('#nav').addEventListener('click', ev => { if (ev.target.dataset.tab) show(ev.target.dataset.tab); });
 $('#dashYear').addEventListener('change', renderDash);
 show(cur);
+connect();
 })();
 </script>
 </body>
